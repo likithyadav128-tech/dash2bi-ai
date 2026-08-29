@@ -1,6 +1,6 @@
 """
 Dash2BI AI — Main Streamlit Application Entrypoint.
-Reconstructs Power BI Reports (.pbix), Power BI Templates (.pbit), and Power BI Projects (.pbip/PBIR/TMDL) from Excel/CSV Datasets and HTML Dashboard Designs.
+Reconstructs Power BI Reports (.pbix via .pbit), Power BI Templates (.pbit), and Power BI Projects (.pbip/PBIR/TMDL) from Excel/CSV Datasets and HTML Dashboard Designs.
 """
 
 import os
@@ -24,7 +24,6 @@ from src.dax.measure_generator import generate_dax_for_mapped_visuals
 from src.powerbi.model_generator import build_semantic_model_spec
 from src.powerbi.pbip_generator import create_pbip_project_folder
 from src.powerbi.pbit_generator import create_pbit_file
-from src.powerbi.pbix_generator import create_pbix_file
 from src.powerbi.validation import validate_project_before_export
 from src.powerbi.export_manager import package_pbip_as_zip, generate_analysis_report_markdown
 
@@ -289,7 +288,7 @@ elif st.session_state.step == 3:
 # STEP 4 — CONVERT & DOWNLOAD PAGE
 # ============================================================
 elif st.session_state.step == 4:
-    st.header("STEP 4 — CONVERT & DOWNLOAD POWER BI DASHBOARD")
+    st.header("STEP 4 — CONVERT & DOWNLOAD POWER BI REPORT")
 
     if not st.session_state.mapped_visuals or not st.session_state.dataset_profile:
         st.warning("Please complete Steps 1 through 3 first.")
@@ -309,9 +308,9 @@ elif st.session_state.step == 4:
         render_validation_summary(val_summary)
 
         st.markdown("---")
-        st.subheader("⚡ Power BI Dashboard Downloads (.pbix & .pbip)")
+        st.subheader("⚡ Power BI Dashboard Downloads")
 
-        # Generate PBIP Project, PBIT Template, and PBIX Standalone Report
+        # Generate PBIP Project and PBIT Template
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = create_pbip_project_folder(
                 project_name="Dash2BI_Reconstructed_Report",
@@ -325,14 +324,13 @@ elif st.session_state.step == 4:
 
             zip_bytes = package_pbip_as_zip(project_dir)
             pbit_bytes = create_pbit_file("Dash2BI_Reconstructed_Report", p.table_name, p.columns_info, mapped, measures, ds_file["bytes"] if ds_file else None)
-            pbix_bytes = create_pbix_file("Dash2BI_Reconstructed_Report", p.table_name, p.columns_info, mapped, measures, ds_file["bytes"] if ds_file else None)
             report_md = generate_analysis_report_markdown(p.to_dict(), st.session_state.html_visuals, mapped, compute_reconstruction_score(mapped))
 
-            # Primary .pbix download row
+            # Primary .pbit download
             st.download_button(
-                label="📊 Download Power BI Report (.pbix Standalone File)",
-                data=pbix_bytes,
-                file_name="Dash2BI_Reconstructed_Report.pbix",
+                label="📄 Download Power BI Template (.pbit Single File — Recommended)",
+                data=pbit_bytes,
+                file_name="Dash2BI_Reconstructed_Report.pbit",
                 mime="application/octet-stream",
                 type="primary",
                 use_container_width=True
@@ -340,23 +338,13 @@ elif st.session_state.step == 4:
 
             st.markdown("")
 
-            btn_col1, btn_col2 = st.columns(2)
-            with btn_col1:
-                st.download_button(
-                    label="📦 Download Power BI Project (.pbip ZIP Archive)",
-                    data=zip_bytes,
-                    file_name="Dash2BI_PowerBI_Project.zip",
-                    mime="application/zip",
-                    use_container_width=True
-                )
-            with btn_col2:
-                st.download_button(
-                    label="📄 Download Power BI Template (.pbit Single File)",
-                    data=pbit_bytes,
-                    file_name="Dash2BI_Reconstructed_Report.pbit",
-                    mime="application/octet-stream",
-                    use_container_width=True
-                )
+            st.download_button(
+                label="📦 Download Power BI Project (.pbip ZIP Archive)",
+                data=zip_bytes,
+                file_name="Dash2BI_PowerBI_Project.zip",
+                mime="application/zip",
+                use_container_width=True
+            )
 
             st.markdown("---")
             d_col1, d_col2 = st.columns(2)
@@ -379,9 +367,9 @@ elif st.session_state.step == 4:
 
         st.markdown("""
             ---
-            ### 📌 Power BI Opening & Conversion Options
+            ### 📌 How to Save as a `.pbix` File in 2 Simple Steps:
             
-            1. **📊 Direct .pbix Download (Recommended):** Click **Download Power BI Report (.pbix Standalone File)** above to open directly in Power BI Desktop!
-            2. **📦 .pbip ZIP Folder:** Unzip and double-click `Dash2BI_Reconstructed_Report.pbip`.
-            3. **📄 .pbit Template:** Double-click `Dash2BI_Reconstructed_Report.pbit`.
+            1. **Click `Download Power BI Template (.pbit Single File)`** above to download your single dashboard file.
+            2. **Double-click `Dash2BI_Reconstructed_Report.pbit`** to open it directly in Power BI Desktop.
+            3. Inside Power BI Desktop, click **File → Save As → Power BI Report (*.pbix)** to save your `.pbix` file!
         """)
