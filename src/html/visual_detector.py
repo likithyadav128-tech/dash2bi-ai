@@ -47,7 +47,7 @@ def detect_kpi_cards(soup: BeautifulSoup) -> List[Dict[str, Any]]:
     Looks for elements containing metric labels, formatted numbers, card classes, or flex boxes.
     """
     kpi_visuals = []
-    card_candidates = soup.find_all(class_=re.compile(r'kpi|card|metric|stat|widget|tile|box|summary', re.I))
+    card_candidates = soup.find_all(class_=re.compile(r'kpi|card|metric|stat|widget|tile|box|summary|indicator', re.I))
     
     if not card_candidates:
         # Fallback to div containers with strong text + number
@@ -57,7 +57,7 @@ def detect_kpi_cards(soup: BeautifulSoup) -> List[Dict[str, Any]]:
 
     for idx, card in enumerate(card_candidates):
         text_content = card.get_text(" ", strip=True)
-        if not text_content or text_content in seen_texts or len(text_content) > 150:
+        if not text_content or text_content in seen_texts or len(text_content) > 180:
             continue
 
         # Look for a number inside card
@@ -67,19 +67,22 @@ def detect_kpi_cards(soup: BeautifulSoup) -> List[Dict[str, Any]]:
 
         # Extract title and value lines
         lines = [line.strip() for line in card.stripped_strings if line.strip()]
-        if len(lines) >= 2:
+        if len(lines) >= 1:
             title = ""
             val_str = ""
             for line in lines:
-                if re.search(r'\d', line):
+                if re.search(r'[\d,]+(?:\.\d+)?', line) and not val_str:
                     val_str = line
-                elif not title:
+                elif not title and not re.search(r'^\d+$', line):
                     title = line
             
             if not title:
                 title = lines[0]
             if not val_str:
                 val_str = lines[1] if len(lines) > 1 else lines[0]
+
+            # Clean up duplicate titles or tag artifacts
+            title = re.sub(r'\s+', ' ', title).strip()
 
             kpi_data = parse_kpi_value(val_str)
             seen_texts.add(text_content)
@@ -109,8 +112,13 @@ def detect_charts(soup: BeautifulSoup, script_contents: List[str]) -> List[Dict[
     chart_containers = soup.find_all(class_=re.compile(r'chart|graph|plot|viz|canvas-container', re.I))
     
     for idx, container in enumerate(chart_containers):
-        title_el = container.find(re.compile(r'h[1-6]|span|header|title', re.I))
+        title_el = container.find(re.compile(r'h[1-6]|span|header|title|p|label|div', re.I))
+        if not title_el:
+            title_el = container.find_previous(re.compile(r'h[1-6]|header|title', re.I))
+        
         title = title_el.get_text(strip=True) if title_el else f"Chart Visual {idx+1}"
+        if len(title) > 60:
+            title = f"Chart Visual {idx+1}"
         
         # Detect chart type hint from class or script
         class_str = " ".join(container.get("class", [])).lower()
