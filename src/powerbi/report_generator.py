@@ -10,6 +10,7 @@ def build_pbir_visual_json(visual_spec: Dict[str, Any], table_name: str) -> Dict
     """
     Generates PBIR visual.json format with valid projections for Card, Chart, Table, and Slicer visuals.
     """
+    safe_table = table_name.replace(" ", "_")
     v_id = visual_spec["visual_id"]
     pbi_type = visual_spec.get("powerbi_type", "tableEx")
     layout = visual_spec.get("layout", {"x": 20, "y": 20, "width": 300, "height": 200})
@@ -28,11 +29,11 @@ def build_pbir_visual_json(visual_spec: Dict[str, Any], table_name: str) -> Dict
                     {
                         "field": {
                             "Measure": {
-                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Expression": { "SourceRef": { "Entity": safe_table } },
                                 "Property": prop_name
                             }
                         },
-                        "queryRef": f"{table_name}.{prop_name}"
+                        "queryRef": f"{safe_table}.{prop_name}"
                     }
                 ]
             }
@@ -48,11 +49,11 @@ def build_pbir_visual_json(visual_spec: Dict[str, Any], table_name: str) -> Dict
                     {
                         "field": {
                             "Column": {
-                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Expression": { "SourceRef": { "Entity": safe_table } },
                                 "Property": cat_prop
                             }
                         },
-                        "queryRef": f"{table_name}.{cat_prop}"
+                        "queryRef": f"{safe_table}.{cat_prop}"
                     }
                 ]
             },
@@ -61,11 +62,11 @@ def build_pbir_visual_json(visual_spec: Dict[str, Any], table_name: str) -> Dict
                     {
                         "field": {
                             "Measure": {
-                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Expression": { "SourceRef": { "Entity": safe_table } },
                                 "Property": val_prop
                             }
                         },
-                        "queryRef": f"{table_name}.{val_prop}"
+                        "queryRef": f"{safe_table}.{val_prop}"
                     }
                 ]
             }
@@ -79,11 +80,11 @@ def build_pbir_visual_json(visual_spec: Dict[str, Any], table_name: str) -> Dict
                     {
                         "field": {
                             "Column": {
-                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Expression": { "SourceRef": { "Entity": safe_table } },
                                 "Property": prop_name
                             }
                         },
-                        "queryRef": f"{table_name}.{prop_name}"
+                        "queryRef": f"{safe_table}.{prop_name}"
                     }
                 ]
             }
@@ -97,11 +98,11 @@ def build_pbir_visual_json(visual_spec: Dict[str, Any], table_name: str) -> Dict
                     {
                         "field": {
                             "Column": {
-                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Expression": { "SourceRef": { "Entity": safe_table } },
                                 "Property": prop_name
                             }
                         },
-                        "queryRef": f"{table_name}.{prop_name}"
+                        "queryRef": f"{safe_table}.{prop_name}"
                     }
                 ]
             }
@@ -121,9 +122,6 @@ def build_pbir_visual_json(visual_spec: Dict[str, Any], table_name: str) -> Dict
             "visualType": pbi_type,
             "query": {
                 "queryState": query_state
-            },
-            "visualCustomizations": {
-                "title": title
             }
         }
     }
