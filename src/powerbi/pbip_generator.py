@@ -108,7 +108,7 @@ def create_pbip_project_folder(
 
     # 3. Write Semantic Model (.SemanticModel/definition.pbism)
     pbism_content = {
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definition/pbism/1.0.0/schema.json",
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json",
         "version": "1.0",
         "settings": {}
     }
