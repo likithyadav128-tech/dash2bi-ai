@@ -1,21 +1,12 @@
 """
 PBIP (Power BI Project) Root Generator for Dash2BI AI.
-Assembles complete Power BI Project directory structure supporting both PBIP Classic Layout and PBIR Enhanced formats:
+Assembles complete standard Power BI Project directory structure:
 ProjectName/
   ProjectName.pbip
   dataset.csv
   ProjectName.Report/
     definition.pbir
     Layout
-    definition/
-      version.json
-      report.json
-      pages/
-        pages.json
-        ReportSection1/
-          page.json
-          visuals/
-            visual_1/visual.json
   ProjectName.SemanticModel/
     definition.pbism
     model.bim
@@ -30,10 +21,9 @@ import json
 import shutil
 import tempfile
 from typing import Dict, Any, List, Optional
-from src.powerbi.pbir_generator import generate_definition_pbir, generate_version_json, generate_report_json, generate_pages_json, generate_page_json
-from src.powerbi.report_generator import build_pbir_visual_json
-from src.powerbi.tmdl_generator import generate_model_tmdl, generate_table_tmdl
+from src.powerbi.pbir_generator import generate_definition_pbir
 from src.powerbi.model_bim_generator import generate_model_bim_json
+from src.powerbi.tmdl_generator import generate_model_tmdl, generate_table_tmdl
 from src.utils.logging import log_event
 
 def generate_classic_report_layout(
@@ -42,7 +32,7 @@ def generate_classic_report_layout(
     dataset_cols: List[Dict[str, Any]],
     measures: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
-    """Generates classic Report/Layout JSON required by default Power BI Desktop without PBIR preview feature."""
+    """Generates standard Power BI Report Layout JSON containing all visual containers and page structure."""
     safe_table = table_name.replace(" ", "_")
     visual_containers = []
     
@@ -138,7 +128,7 @@ def create_pbip_project_folder(
     raw_dataset_bytes: Optional[bytes] = None
 ) -> str:
     """
-    Creates the complete valid Power BI Project (.pbip) folder layout inside output_dir.
+    Creates the complete valid standard Power BI Project (.pbip) folder layout inside output_dir.
     Returns path to the created root project directory.
     """
     safe_name = "".join(c for c in project_name if c.isalnum() or c in ('_', '-')).strip() or "Dash2BI_Project"
@@ -178,44 +168,15 @@ def create_pbip_project_folder(
     with open(os.path.join(root_dir, f"{safe_name}.pbip"), 'w', encoding='utf-8') as f:
         json.dump(pbip_content, f, indent=2)
 
-    # 2. Write Classic Report Layout (.Report/Layout) for Standard Power BI Desktop
+    # 2. Write Report Definition (.Report/definition.pbir & .Report/Layout)
+    with open(os.path.join(report_dir, "definition.pbir"), 'w', encoding='utf-8') as f:
+        f.write(generate_definition_pbir(model_folder_name))
+
     classic_layout_dict = generate_classic_report_layout(table_name, mapped_visuals, dataset_cols, measures)
     with open(os.path.join(report_dir, "Layout"), 'w', encoding='utf-16le') as f:
         json.dump(classic_layout_dict, f, indent=2)
 
-    # 3. Write PBIR Definition (.Report/definition.pbir & .Report/definition/...) for PBIR Preview Power BI Desktop
-    with open(os.path.join(report_dir, "definition.pbir"), 'w', encoding='utf-8') as f:
-        f.write(generate_definition_pbir(model_folder_name))
-
-    report_def_dir = os.path.join(report_dir, "definition")
-    os.makedirs(report_def_dir, exist_ok=True)
-
-    with open(os.path.join(report_def_dir, "version.json"), 'w', encoding='utf-8') as f:
-        f.write(generate_version_json())
-
-    with open(os.path.join(report_def_dir, "report.json"), 'w', encoding='utf-8') as f:
-        f.write(generate_report_json())
-
-    pages_dir = os.path.join(report_def_dir, "pages")
-    sec1_dir = os.path.join(pages_dir, "ReportSection1")
-    visuals_dir = os.path.join(sec1_dir, "visuals")
-    os.makedirs(visuals_dir, exist_ok=True)
-
-    with open(os.path.join(pages_dir, "pages.json"), 'w', encoding='utf-8') as f:
-        f.write(generate_pages_json())
-
-    with open(os.path.join(sec1_dir, "page.json"), 'w', encoding='utf-8') as f:
-        f.write(generate_page_json("Reconstructed Dashboard"))
-
-    for v in mapped_visuals:
-        v_id = v["visual_id"]
-        v_folder = os.path.join(visuals_dir, v_id)
-        os.makedirs(v_folder, exist_ok=True)
-        v_json = build_pbir_visual_json(v, table_name)
-        with open(os.path.join(v_folder, "visual.json"), 'w', encoding='utf-8') as f:
-            json.dump(v_json, f, indent=2)
-
-    # 4. Write Semantic Model (.SemanticModel/definition.pbism & model.bim) with embedded dataset bytes
+    # 3. Write Semantic Model (.SemanticModel/definition.pbism, model.bim, & TMDL)
     pbism_content = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json",
         "version": "1.0",
@@ -228,6 +189,7 @@ def create_pbip_project_folder(
     with open(os.path.join(model_dir, "model.bim"), 'w', encoding='utf-8') as f:
         json.dump(model_bim_dict, f, indent=2)
 
+    # TMDL definitions
     model_def_dir = os.path.join(model_dir, "definition")
     tables_dir = os.path.join(model_def_dir, "tables")
     os.makedirs(tables_dir, exist_ok=True)
@@ -258,5 +220,5 @@ def create_pbip_project_folder(
     with open(os.path.join(tables_dir, f"{safe_table}.tmdl"), 'w', encoding='utf-8') as f:
         f.write(generate_table_tmdl(table_name, tmdl_cols, tmdl_measures, csv_content))
 
-    log_event("powerbi", f"Successfully assembled PBIP project structure at '{root_dir}'")
+    log_event("powerbi", f"Successfully assembled standard PBIP project structure at '{root_dir}'")
     return root_dir
