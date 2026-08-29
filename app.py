@@ -323,7 +323,7 @@ elif st.session_state.step == 4:
             )
 
             zip_bytes = package_pbip_as_zip(project_dir)
-            pbit_bytes = create_pbit_file("Dash2BI_Reconstructed_Report", p.table_name, p.columns_info, mapped, measures)
+            pbit_bytes = create_pbit_file("Dash2BI_Reconstructed_Report", p.table_name, p.columns_info, mapped, measures, ds_file["bytes"] if ds_file else None)
             report_md = generate_analysis_report_markdown(p.to_dict(), st.session_state.html_visuals, mapped, compute_reconstruction_score(mapped))
 
             btn_col1, btn_col2 = st.columns(2)

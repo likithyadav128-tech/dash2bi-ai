@@ -1,10 +1,11 @@
 """
 TMDL (Tabular Model Definition Language) Generator for Dash2BI AI.
-Generates Microsoft TMDL files for Power BI Project semantic models.
+Generates Microsoft TMDL files for Power BI Project semantic models with optional embedded Base64 dataset partitions.
 Guarantees unique column and measure names.
 """
 
-from typing import Dict, Any, List
+import base64
+from typing import Dict, Any, List, Optional
 
 def generate_model_tmdl(model_name: str, table_name: str) -> str:
     """Generates root model.tmdl file content."""
@@ -16,7 +17,12 @@ def generate_model_tmdl(model_name: str, table_name: str) -> str:
 ref table {safe_table}
 """
 
-def generate_table_tmdl(table_name: str, columns: List[Dict[str, Any]], measures: List[Dict[str, Any]]) -> str:
+def generate_table_tmdl(
+    table_name: str,
+    columns: List[Dict[str, Any]],
+    measures: List[Dict[str, Any]],
+    raw_dataset_bytes: Optional[bytes] = None
+) -> str:
     """Generates TMDL table definition file content with M query partition and unique measure collections."""
     safe_table = table_name.replace(" ", "_")
     lines = [f"table {safe_table}"]
@@ -38,7 +44,13 @@ def generate_table_tmdl(table_name: str, columns: List[Dict[str, Any]], measures
     lines.append("\t\tmode: import")
     lines.append("\t\tsource =")
     lines.append("\t\t\tlet")
-    lines.append(f'\t\t\t    Source = Csv.Document(File.Contents("dataset.csv"), [Delimiter=",", Columns={num_cols}, Encoding=65001, QuoteStyle=QuoteStyle.None]),')
+
+    if raw_dataset_bytes:
+        b64_data = base64.b64encode(raw_dataset_bytes).decode('utf-8')
+        lines.append(f'\t\t\t    Source = Csv.Document(Binary.FromText("{b64_data}", BinaryEncoding.Base64), [Delimiter=",", Columns={num_cols}, Encoding=65001, QuoteStyle=QuoteStyle.None]),')
+    else:
+        lines.append(f'\t\t\t    Source = Csv.Document(File.Contents("dataset.csv"), [Delimiter=",", Columns={num_cols}, Encoding=65001, QuoteStyle=QuoteStyle.None]),')
+
     lines.append('\t\t\t    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])')
     lines.append("\t\t\tin")
     lines.append('\t\t\t    #"Promoted Headers"\n')

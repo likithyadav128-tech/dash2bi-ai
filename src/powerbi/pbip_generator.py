@@ -215,7 +215,7 @@ def create_pbip_project_folder(
         with open(os.path.join(v_folder, "visual.json"), 'w', encoding='utf-8') as f:
             json.dump(v_json, f, indent=2)
 
-    # 4. Write Semantic Model (.SemanticModel/definition.pbism & model.bim)
+    # 4. Write Semantic Model (.SemanticModel/definition.pbism & model.bim) with embedded dataset bytes
     pbism_content = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json",
         "version": "1.0",
@@ -224,7 +224,7 @@ def create_pbip_project_folder(
     with open(os.path.join(model_dir, "definition.pbism"), 'w', encoding='utf-8') as f:
         json.dump(pbism_content, f, indent=2)
 
-    model_bim_dict = generate_model_bim_json(table_name, dataset_cols, measures)
+    model_bim_dict = generate_model_bim_json(table_name, dataset_cols, measures, csv_content)
     with open(os.path.join(model_dir, "model.bim"), 'w', encoding='utf-8') as f:
         json.dump(model_bim_dict, f, indent=2)
 
@@ -256,7 +256,7 @@ def create_pbip_project_folder(
 
     safe_table = table_name.replace(" ", "_")
     with open(os.path.join(tables_dir, f"{safe_table}.tmdl"), 'w', encoding='utf-8') as f:
-        f.write(generate_table_tmdl(table_name, tmdl_cols, tmdl_measures))
+        f.write(generate_table_tmdl(table_name, tmdl_cols, tmdl_measures, csv_content))
 
     log_event("powerbi", f"Successfully assembled PBIP project structure at '{root_dir}'")
     return root_dir

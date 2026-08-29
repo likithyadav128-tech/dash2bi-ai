@@ -7,14 +7,16 @@ import os
 import json
 import zipfile
 import tempfile
-from typing import Dict, Any, List
+import base64
+from typing import Dict, Any, List, Optional
 
 def build_data_model_schema_json(
     table_name: str,
     dataset_cols: List[Dict[str, Any]],
-    measures: List[Dict[str, Any]]
+    measures: List[Dict[str, Any]],
+    raw_dataset_bytes: Optional[bytes] = None
 ) -> Dict[str, Any]:
-    """Generates DataModelSchema JSON for .pbit file."""
+    """Generates DataModelSchema JSON for .pbit file with embedded Base64 dataset."""
     safe_table = table_name.replace(" ", "_")
     columns = []
     for col in dataset_cols:
@@ -32,6 +34,12 @@ def build_data_model_schema_json(
             "formatString": "$#,##0.00" if "Sales" in m["measure_name"] or "Profit" in m["measure_name"] else ("0.0%" if "Margin" in m["measure_name"] else "#,##0")
         })
 
+    if raw_dataset_bytes:
+        b64_data = base64.b64encode(raw_dataset_bytes).decode('utf-8')
+        m_expr = f'let Source = Csv.Document(Binary.FromText("{b64_data}", BinaryEncoding.Base64), [Delimiter=",", Columns={len(columns)}, Encoding=65001, QuoteStyle=QuoteStyle.None]), #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #"Promoted Headers"'
+    else:
+        m_expr = f'let Source = Csv.Document(File.Contents("dataset.csv"), [Delimiter=",", Columns={len(columns)}, Encoding=65001, QuoteStyle=QuoteStyle.None]), #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #"Promoted Headers"'
+
     return {
         "name": f"{safe_table}_Model",
         "compatibilityLevel": 1550,
@@ -48,7 +56,7 @@ def build_data_model_schema_json(
                             "mode": "import",
                             "source": {
                                 "type": "m",
-                                "expression": f'let Source = Csv.Document(File.Contents("dataset.csv"), [Delimiter=",", Columns={len(columns)}, Encoding=65001, QuoteStyle=QuoteStyle.None]), #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #"Promoted Headers"'
+                                "expression": m_expr
                             }
                         }
                     ]
@@ -62,13 +70,14 @@ def create_pbit_file(
     table_name: str,
     dataset_cols: List[Dict[str, Any]],
     mapped_visuals: List[Dict[str, Any]],
-    measures: List[Dict[str, Any]]
+    measures: List[Dict[str, Any]],
+    raw_dataset_bytes: Optional[bytes] = None
 ) -> bytes:
     """
-    Creates a single valid Power BI Template (.pbit) binary ZIP archive with visual containers.
+    Creates a single valid Power BI Template (.pbit) binary ZIP archive with visual containers and embedded Base64 data.
     """
     safe_table = table_name.replace(" ", "_")
-    schema_json = build_data_model_schema_json(table_name, dataset_cols, measures)
+    schema_json = build_data_model_schema_json(table_name, dataset_cols, measures, raw_dataset_bytes)
     
     visual_containers = []
     for idx, v in enumerate(mapped_visuals):

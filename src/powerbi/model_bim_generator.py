@@ -1,18 +1,20 @@
 """
 Model BIM Generator for Dash2BI AI.
 Generates model.bim (Tabular Object Model JSON) required by Power BI Desktop for Semantic Models.
-Guarantees unique column and measure collections.
+Guarantees unique column and measure collections and supports embedded Base64 data partitions.
 """
 
 import json
-from typing import Dict, Any, List
+import base64
+from typing import Dict, Any, List, Optional
 
 def generate_model_bim_json(
     table_name: str,
     dataset_cols: List[Dict[str, Any]],
-    measures: List[Dict[str, Any]]
+    measures: List[Dict[str, Any]],
+    raw_dataset_bytes: Optional[bytes] = None
 ) -> Dict[str, Any]:
-    """Generates complete model.bim JSON structure with unique measure collections."""
+    """Generates complete model.bim JSON structure with unique measure collections and embedded data."""
     safe_table = table_name.replace(" ", "_")
     columns = []
     seen_col_names = set()
@@ -44,13 +46,23 @@ def generate_model_bim_json(
             "formatString": "$#,##0.00" if "Sales" in m_name or "Profit" in m_name else ("0.0%" if "Margin" in m_name else "#,##0")
         })
 
-    m_partition_expression = [
-        "let",
-        f'    Source = Csv.Document(File.Contents("dataset.csv"), [Delimiter=",", Columns={len(columns)}, Encoding=65001, QuoteStyle=QuoteStyle.None]),',
-        '    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])',
-        "in",
-        '    #"Promoted Headers"'
-    ]
+    if raw_dataset_bytes:
+        b64_data = base64.b64encode(raw_dataset_bytes).decode('utf-8')
+        m_partition_expression = [
+            "let",
+            f'    Source = Csv.Document(Binary.FromText("{b64_data}", BinaryEncoding.Base64), [Delimiter=",", Columns={len(columns)}, Encoding=65001, QuoteStyle=QuoteStyle.None]),',
+            '    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])',
+            "in",
+            '    #"Promoted Headers"'
+        ]
+    else:
+        m_partition_expression = [
+            "let",
+            f'    Source = Csv.Document(File.Contents("dataset.csv"), [Delimiter=",", Columns={len(columns)}, Encoding=65001, QuoteStyle=QuoteStyle.None]),',
+            '    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])',
+            "in",
+            '    #"Promoted Headers"'
+        ]
 
     return {
         "name": f"{safe_table}_Model",
