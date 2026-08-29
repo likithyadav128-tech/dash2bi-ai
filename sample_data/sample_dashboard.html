@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Superstore Executive Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .dashboard-title { font-size: 28px; font-weight: bold; color: #1e293b; }
+        .filters-container { display: flex; gap: 15px; }
+        .filter-box { display: flex; flex-direction: column; font-size: 13px; color: #64748b; }
+        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
+        .kpi-card { background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .kpi-title { font-size: 14px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .kpi-value { font-size: 26px; font-weight: bold; color: #0f172a; margin-top: 5px; }
+        .charts-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 25px; }
+        .chart-box { background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: 260px; }
+        .chart-title { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 15px; }
+        .table-box { background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background-color: #f8fafc; color: #475569; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Global Superstore Executive Dashboard</h1>
+        <div class="filters-container">
+            <div class="filter-box">
+                <label for="region_select">Region Filter:</label>
+                <select id="region_select" name="region">
+                    <option value="All">All Regions</option>
+                    <option value="East">East</option>
+                    <option value="West">West</option>
+                    <option value="Central">Central</option>
+                    <option value="South">South</option>
+                </select>
+            </div>
+            <div class="filter-box">
+                <label for="order_date_input">Order Date Filter:</label>
+                <input type="date" id="order_date_input" name="order_date">
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards Row -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-title">Total Sales</div>
+            <div class="kpi-value">$2.3M</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Total Profit</div>
+            <div class="kpi-value">$450K</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Order Count</div>
+            <div class="kpi-value">9,994</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Profit Margin</div>
+            <div class="kpi-value">18.5%</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+        <div class="chart-box chart-bar">
+            <div class="chart-title">Sales by Region</div>
+            <canvas id="barChartCanvas"></canvas>
+        </div>
+        <div class="chart-box chart-line">
+            <div class="chart-title">Monthly Sales Trend</div>
+            <canvas id="lineChartCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="charts-row">
+        <div class="chart-box chart-pie">
+            <div class="chart-title">Sales by Category</div>
+            <canvas id="pieChartCanvas"></canvas>
+        </div>
+        <div class="table-box">
+            <div class="chart-title">Top Performing Products</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Sales</th>
+                        <th>Profit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ergonomic Chair</td>
+                        <td>Furniture</td>
+                        <td>$12,450</td>
+                        <td>$2,300</td>
+                    </tr>
+                    <tr>
+                        <td>Wireless Phone</td>
+                        <td>Technology</td>
+                        <td>$18,900</td>
+                        <td>$4,100</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Chart.js framework initialization script
+        new Chart(document.getElementById('barChartCanvas'), { type: 'bar' });
+        new Chart(document.getElementById('lineChartCanvas'), { type: 'line' });
+        new Chart(document.getElementById('pieChartCanvas'), { type: 'pie' });
+    </script>
+</body>
+</html>

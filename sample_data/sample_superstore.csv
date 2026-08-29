@@ -1,0 +1,101 @@
+Order ID,Order Date,Customer ID,Customer Name,Region,Category,Sub-Category,Product Name,Sales,Profit,Quantity,Discount
+CA-2024-1000,2024-01-01,CUST-107,Alice Johnson,South,Office Supplies,Chairs,Heavy Duty Binder,327.99,175.09,8,0.24
+CA-2024-1001,2024-01-02,CUST-115,Alice Johnson,South,Office Supplies,Copiers,Storage Box,2330.78,480.41,6,0.08
+CA-2024-1002,2024-01-03,CUST-111,John Doe,Central,Technology,Binders,Wireless Phone,2436.91,298.36,7,0.2
+CA-2024-1003,2024-01-04,CUST-108,Alice Johnson,South,Technology,Copiers,Ergonomic Chair,2490.03,-55.54,8,0.23
+CA-2024-1004,2024-01-05,CUST-107,Charlie Davis,Central,Office Supplies,Chairs,Storage Box,186.88,-74.22,2,0.18
+CA-2024-1005,2024-01-06,CUST-119,Alice Johnson,West,Office Supplies,Chairs,Premium Paper,1855.74,-6.3,8,0.14
+CA-2024-1006,2024-01-07,CUST-111,John Doe,Central,Furniture,Copiers,Storage Box,1387.49,-90.43,3,0.12
+CA-2024-1007,2024-01-08,CUST-111,Charlie Davis,Central,Office Supplies,Phones,Storage Box,1779.29,-47.25,7,0.1
+CA-2024-1008,2024-01-09,CUST-104,Jane Smith,Central,Furniture,Storage,Wireless Phone,2423.2,384.2,3,0.28
+CA-2024-1009,2024-01-10,CUST-108,Alice Johnson,South,Furniture,Chairs,Premium Paper,1735.67,274.04,7,0.25
+CA-2024-1010,2024-01-11,CUST-103,John Doe,South,Furniture,Copiers,Storage Box,2100.56,424.94,2,0.29
+CA-2024-1011,2024-01-12,CUST-102,Jane Smith,Central,Furniture,Copiers,Ergonomic Chair,2173.83,539.22,6,0.04
+CA-2024-1012,2024-01-13,CUST-112,Jane Smith,South,Furniture,Paper,Ergonomic Chair,2104.28,309.6,3,0.22
+CA-2024-1013,2024-01-14,CUST-106,Bob Brown,East,Technology,Storage,Heavy Duty Binder,1093.92,408.28,3,0.28
+CA-2024-1014,2024-01-15,CUST-102,Charlie Davis,East,Office Supplies,Binders,Premium Paper,595.31,429.96,9,0.05
+CA-2024-1015,2024-01-16,CUST-101,Alice Johnson,South,Furniture,Phones,Premium Paper,1021.8,164.5,7,0.02
+CA-2024-1016,2024-01-17,CUST-112,John Doe,South,Office Supplies,Binders,Heavy Duty Binder,2235.15,68.76,5,0.22
+CA-2024-1017,2024-01-18,CUST-112,Bob Brown,Central,Office Supplies,Storage,Storage Box,409.18,43.53,7,0.17
+CA-2024-1018,2024-01-19,CUST-117,Charlie Davis,West,Furniture,Storage,Premium Paper,1307.65,76.01,9,0.25
+CA-2024-1019,2024-01-20,CUST-110,Bob Brown,South,Technology,Storage,Ergonomic Chair,621.41,92.31,1,0.04
+CA-2024-1020,2024-01-21,CUST-116,Charlie Davis,East,Furniture,Binders,Ergonomic Chair,1474.2,45.06,7,0.24
+CA-2024-1021,2024-01-22,CUST-115,Charlie Davis,Central,Technology,Storage,Wireless Phone,2164.69,514.75,6,0.06
+CA-2024-1022,2024-01-23,CUST-115,Alice Johnson,South,Office Supplies,Copiers,Premium Paper,2206.88,429.9,9,0.05
+CA-2024-1023,2024-01-24,CUST-119,Charlie Davis,East,Technology,Binders,Storage Box,629.88,-67.17,1,0.05
+CA-2024-1024,2024-01-25,CUST-112,Bob Brown,East,Technology,Storage,Heavy Duty Binder,2273.85,88.07,4,0.24
+CA-2024-1025,2024-01-26,CUST-103,Charlie Davis,West,Technology,Copiers,Heavy Duty Binder,1500.13,-84.47,9,0.2
+CA-2024-1026,2024-01-27,CUST-105,Alice Johnson,Central,Office Supplies,Paper,Storage Box,908.03,248.72,4,0.16
+CA-2024-1027,2024-01-28,CUST-119,Alice Johnson,Central,Office Supplies,Storage,Wireless Phone,1785.04,233.35,3,0.11
+CA-2024-1028,2024-01-29,CUST-107,Bob Brown,West,Technology,Binders,Heavy Duty Binder,1230.08,481.96,9,0.26
+CA-2024-1029,2024-01-30,CUST-109,Jane Smith,West,Technology,Chairs,Premium Paper,976.07,115.44,2,0.12
+CA-2024-1030,2024-01-31,CUST-107,Jane Smith,Central,Furniture,Storage,Wireless Phone,1777.46,471.47,4,0.24
+CA-2024-1031,2024-02-01,CUST-118,Charlie Davis,Central,Technology,Chairs,Premium Paper,659.37,577.58,6,0.13
+CA-2024-1032,2024-02-02,CUST-104,John Doe,South,Furniture,Copiers,Ergonomic Chair,859.12,-38.11,2,0.11
+CA-2024-1033,2024-02-03,CUST-114,Charlie Davis,South,Technology,Paper,Wireless Phone,1114.41,454.27,8,0.14
+CA-2024-1034,2024-02-04,CUST-118,Bob Brown,West,Furniture,Phones,Heavy Duty Binder,671.52,312.97,8,0.09
+CA-2024-1035,2024-02-05,CUST-109,Bob Brown,South,Office Supplies,Paper,Wireless Phone,1042.75,236.03,1,0.22
+CA-2024-1036,2024-02-06,CUST-102,Bob Brown,East,Technology,Storage,Wireless Phone,1450.11,194.38,3,0.15
+CA-2024-1037,2024-02-07,CUST-115,Bob Brown,South,Technology,Chairs,Wireless Phone,1865.39,449.27,9,0.07
+CA-2024-1038,2024-02-08,CUST-107,Bob Brown,South,Technology,Chairs,Wireless Phone,1929.63,347.55,5,0.27
+CA-2024-1039,2024-02-09,CUST-112,Alice Johnson,East,Technology,Binders,Premium Paper,2065.84,463.53,6,0.12
+CA-2024-1040,2024-02-10,CUST-108,Jane Smith,West,Furniture,Chairs,Ergonomic Chair,1873.32,532.21,4,0.16
+CA-2024-1041,2024-02-11,CUST-115,Bob Brown,East,Technology,Binders,Storage Box,1718.55,332.08,2,0.27
+CA-2024-1042,2024-02-12,CUST-103,John Doe,South,Office Supplies,Copiers,Wireless Phone,631.89,586.32,8,0.19
+CA-2024-1043,2024-02-13,CUST-114,John Doe,West,Office Supplies,Phones,Heavy Duty Binder,1030.55,325.66,6,0.04
+CA-2024-1044,2024-02-14,CUST-117,John Doe,South,Technology,Storage,Wireless Phone,1220.4,345.65,5,0.28
+CA-2024-1045,2024-02-15,CUST-104,John Doe,East,Office Supplies,Binders,Heavy Duty Binder,253.08,288.37,9,0.19
+CA-2024-1046,2024-02-16,CUST-118,Alice Johnson,East,Technology,Phones,Premium Paper,1344.51,-36.3,1,0.1
+CA-2024-1047,2024-02-17,CUST-108,John Doe,South,Technology,Chairs,Heavy Duty Binder,1119.02,408.48,5,0.04
+CA-2024-1048,2024-02-18,CUST-104,Bob Brown,Central,Office Supplies,Chairs,Storage Box,2015.17,283.21,6,0.24
+CA-2024-1049,2024-02-19,CUST-102,Charlie Davis,Central,Technology,Phones,Ergonomic Chair,2445.86,215.64,5,0.19
+CA-2024-1050,2024-02-20,CUST-106,John Doe,East,Office Supplies,Chairs,Heavy Duty Binder,1412.21,537.33,6,0.16
+CA-2024-1051,2024-02-21,CUST-110,Alice Johnson,East,Furniture,Copiers,Heavy Duty Binder,840.58,108.57,6,0.27
+CA-2024-1052,2024-02-22,CUST-104,Alice Johnson,Central,Technology,Copiers,Ergonomic Chair,156.33,266.52,7,0.24
+CA-2024-1053,2024-02-23,CUST-118,John Doe,Central,Furniture,Phones,Storage Box,2315.38,388.35,4,0.05
+CA-2024-1054,2024-02-24,CUST-112,Charlie Davis,South,Office Supplies,Binders,Wireless Phone,2301.83,457.53,8,0.09
+CA-2024-1055,2024-02-25,CUST-102,John Doe,South,Furniture,Binders,Heavy Duty Binder,669.83,221.54,7,0.07
+CA-2024-1056,2024-02-26,CUST-110,Alice Johnson,Central,Furniture,Phones,Ergonomic Chair,1753.76,489.46,9,0.22
+CA-2024-1057,2024-02-27,CUST-104,Jane Smith,South,Office Supplies,Binders,Premium Paper,234.81,438.24,7,0.01
+CA-2024-1058,2024-02-28,CUST-114,Bob Brown,South,Furniture,Binders,Ergonomic Chair,457.23,-53.63,3,0.17
+CA-2024-1059,2024-02-29,CUST-116,Alice Johnson,West,Furniture,Copiers,Premium Paper,581.18,-67.9,3,0.23
+CA-2024-1060,2024-03-01,CUST-115,John Doe,South,Office Supplies,Binders,Storage Box,771.51,334.56,8,0.26
+CA-2024-1061,2024-03-02,CUST-108,Bob Brown,East,Furniture,Paper,Wireless Phone,2489.79,143.19,5,0.1
+CA-2024-1062,2024-03-03,CUST-114,John Doe,South,Office Supplies,Storage,Ergonomic Chair,1757.47,46.39,4,0.25
+CA-2024-1063,2024-03-04,CUST-108,John Doe,South,Furniture,Chairs,Heavy Duty Binder,991.29,305.75,8,0.03
+CA-2024-1064,2024-03-05,CUST-116,Jane Smith,Central,Office Supplies,Paper,Storage Box,1855.9,139.09,6,0.25
+CA-2024-1065,2024-03-06,CUST-113,Bob Brown,East,Office Supplies,Binders,Ergonomic Chair,2292.37,276.08,2,0.04
+CA-2024-1066,2024-03-07,CUST-118,Bob Brown,South,Furniture,Copiers,Heavy Duty Binder,2398.82,222.08,4,0.12
+CA-2024-1067,2024-03-08,CUST-115,Jane Smith,South,Furniture,Phones,Ergonomic Chair,191.77,309.34,4,0.24
+CA-2024-1068,2024-03-09,CUST-113,Alice Johnson,West,Furniture,Binders,Premium Paper,1016.58,180.21,6,0.04
+CA-2024-1069,2024-03-10,CUST-109,John Doe,South,Technology,Copiers,Ergonomic Chair,311.55,388.37,6,0.07
+CA-2024-1070,2024-03-11,CUST-115,Charlie Davis,South,Technology,Storage,Ergonomic Chair,872.37,26.05,1,0.22
+CA-2024-1071,2024-03-12,CUST-113,John Doe,West,Technology,Binders,Ergonomic Chair,465.72,387.55,8,0.22
+CA-2024-1072,2024-03-13,CUST-101,John Doe,Central,Office Supplies,Phones,Storage Box,1634.78,188.16,6,0.19
+CA-2024-1073,2024-03-14,CUST-107,Alice Johnson,South,Furniture,Copiers,Ergonomic Chair,1001.26,512.02,3,0.21
+CA-2024-1074,2024-03-15,CUST-109,John Doe,West,Office Supplies,Copiers,Heavy Duty Binder,612.02,260.67,9,0.16
+CA-2024-1075,2024-03-16,CUST-101,Jane Smith,East,Technology,Copiers,Premium Paper,701.55,581.18,2,0.08
+CA-2024-1076,2024-03-17,CUST-112,Jane Smith,Central,Furniture,Storage,Premium Paper,932.85,321.35,8,0.1
+CA-2024-1077,2024-03-18,CUST-108,Bob Brown,East,Office Supplies,Binders,Ergonomic Chair,686.88,56.69,3,0.05
+CA-2024-1078,2024-03-19,CUST-111,Charlie Davis,East,Furniture,Storage,Storage Box,1160.44,475.25,5,0.27
+CA-2024-1079,2024-03-20,CUST-119,John Doe,West,Office Supplies,Chairs,Storage Box,129.17,141.56,6,0.18
+CA-2024-1080,2024-03-21,CUST-117,John Doe,South,Furniture,Chairs,Heavy Duty Binder,735.42,143.33,6,0.12
+CA-2024-1081,2024-03-22,CUST-108,Alice Johnson,West,Technology,Binders,Ergonomic Chair,1057.46,-77.74,4,0.14
+CA-2024-1082,2024-03-23,CUST-103,Jane Smith,West,Technology,Storage,Premium Paper,1526.82,284.1,3,0.28
+CA-2024-1083,2024-03-24,CUST-103,Charlie Davis,West,Furniture,Phones,Storage Box,713.85,274.1,4,0.05
+CA-2024-1084,2024-03-25,CUST-101,Bob Brown,West,Office Supplies,Copiers,Ergonomic Chair,376.3,149.19,1,0.18
+CA-2024-1085,2024-03-26,CUST-105,Jane Smith,Central,Technology,Copiers,Storage Box,236.69,525.95,4,0.15
+CA-2024-1086,2024-03-27,CUST-110,Bob Brown,South,Technology,Binders,Storage Box,2354.3,-9.88,1,0.18
+CA-2024-1087,2024-03-28,CUST-107,Alice Johnson,East,Technology,Chairs,Premium Paper,1070.77,131.07,1,0.01
+CA-2024-1088,2024-03-29,CUST-109,Alice Johnson,East,Furniture,Chairs,Wireless Phone,1473.85,125.11,6,0.26
+CA-2024-1089,2024-03-30,CUST-107,John Doe,South,Furniture,Copiers,Heavy Duty Binder,2301.98,-35.4,5,0.28
+CA-2024-1090,2024-03-31,CUST-109,Charlie Davis,East,Office Supplies,Binders,Heavy Duty Binder,252.73,236.8,4,0.17
+CA-2024-1091,2024-04-01,CUST-108,Bob Brown,South,Office Supplies,Storage,Premium Paper,2197.82,381.45,3,0.21
+CA-2024-1092,2024-04-02,CUST-112,Jane Smith,East,Office Supplies,Chairs,Storage Box,1401.39,258.16,1,0.28
+CA-2024-1093,2024-04-03,CUST-102,Alice Johnson,West,Furniture,Storage,Ergonomic Chair,453.84,9.88,6,0.21
+CA-2024-1094,2024-04-04,CUST-101,John Doe,East,Furniture,Chairs,Storage Box,1057.58,164.1,2,0.05
+CA-2024-1095,2024-04-05,CUST-116,John Doe,South,Office Supplies,Chairs,Premium Paper,1955.13,-98.18,8,0.17
+CA-2024-1096,2024-04-06,CUST-105,Bob Brown,South,Office Supplies,Paper,Heavy Duty Binder,1226.91,507.81,5,0.18
+CA-2024-1097,2024-04-07,CUST-103,Alice Johnson,South,Furniture,Chairs,Storage Box,2463.95,-40.84,7,0.13
+CA-2024-1098,2024-04-08,CUST-112,Charlie Davis,South,Office Supplies,Phones,Heavy Duty Binder,973.01,318.09,2,0.22
+CA-2024-1099,2024-04-09,CUST-108,Alice Johnson,South,Technology,Binders,Ergonomic Chair,1886.47,590.38,8,0.28

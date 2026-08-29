@@ -1,0 +1,10 @@
+.streamlit/secrets.toml
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.zip
+*.log
+.DS_Store
