@@ -7,6 +7,7 @@ ProjectName/
   ProjectName.Report/
     definition.pbir
     definition/
+      version.json
       pages/
         pages.json
         ReportSection1/
@@ -27,7 +28,7 @@ import json
 import shutil
 import tempfile
 from typing import Dict, Any, List, Optional
-from src.powerbi.pbir_generator import generate_definition_pbir, generate_pages_json, generate_page_json
+from src.powerbi.pbir_generator import generate_definition_pbir, generate_version_json, generate_pages_json, generate_page_json
 from src.powerbi.report_generator import build_pbir_visual_json
 from src.powerbi.tmdl_generator import generate_model_tmdl, generate_table_tmdl
 from src.powerbi.model_bim_generator import generate_model_bim_json
@@ -83,12 +84,19 @@ def create_pbip_project_folder(
     with open(os.path.join(root_dir, f"{safe_name}.pbip"), 'w', encoding='utf-8') as f:
         json.dump(pbip_content, f, indent=2)
 
-    # 2. Write Report Definition (.Report/definition.pbir)
+    # 2. Write Report Definition (.Report/definition.pbir & .Report/definition/version.json)
     with open(os.path.join(report_dir, "definition.pbir"), 'w', encoding='utf-8') as f:
         f.write(generate_definition_pbir(model_folder_name))
 
+    report_def_dir = os.path.join(report_dir, "definition")
+    os.makedirs(report_def_dir, exist_ok=True)
+
+    # Write version.json required by Power BI Desktop PBIR schema
+    with open(os.path.join(report_def_dir, "version.json"), 'w', encoding='utf-8') as f:
+        f.write(generate_version_json())
+
     # Pages structure
-    pages_dir = os.path.join(report_dir, "definition", "pages")
+    pages_dir = os.path.join(report_def_dir, "pages")
     sec1_dir = os.path.join(pages_dir, "ReportSection1")
     visuals_dir = os.path.join(sec1_dir, "visuals")
     os.makedirs(visuals_dir, exist_ok=True)

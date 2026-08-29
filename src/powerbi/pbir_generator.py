@@ -1,6 +1,6 @@
 """
 PBIR (Report Definition) Generator for Dash2BI AI.
-Builds definition.pbir, pages.json, page.json, and visual definitions.
+Builds definition.pbir, version.json, pages.json, page.json, and visual definitions.
 """
 
 import json
@@ -17,6 +17,14 @@ def generate_definition_pbir(semantic_model_folder_name: str) -> str:
                 "path": f"../{semantic_model_folder_name}"
             }
         }
+    }
+    return json.dumps(data, indent=2)
+
+def generate_version_json() -> str:
+    """Generates content for definition/version.json."""
+    data = {
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/version/1.0.0/schema.json",
+        "version": "2.0"
     }
     return json.dumps(data, indent=2)
 
