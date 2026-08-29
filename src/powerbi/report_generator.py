@@ -1,6 +1,6 @@
 """
 Report Generator module for Dash2BI AI.
-Generates Power BI PBIR Visual JSON objects with exact layout positioning.
+Generates Power BI PBIR Visual JSON objects with exact query projections and canvas positioning.
 """
 
 import json
@@ -8,13 +8,104 @@ from typing import Dict, Any, List
 
 def build_pbir_visual_json(visual_spec: Dict[str, Any], table_name: str) -> Dict[str, Any]:
     """
-    Generates PBIR visual.json format.
+    Generates PBIR visual.json format with valid projections for Card, Chart, Table, and Slicer visuals.
     """
     v_id = visual_spec["visual_id"]
     pbi_type = visual_spec.get("powerbi_type", "tableEx")
     layout = visual_spec.get("layout", {"x": 20, "y": 20, "width": 300, "height": 200})
     title = visual_spec.get("title", "")
-    field = visual_spec.get("mapped_field", "")
+    mapped_field = visual_spec.get("mapped_field", "")
+    measure_name = visual_spec.get("measure_name", title)
+
+    query_state: Dict[str, Any] = {}
+
+    if pbi_type == "card":
+        # Card Visual Projection bound to Measure
+        prop_name = measure_name if measure_name else (mapped_field or "Confirmed")
+        query_state = {
+            "Fields": {
+                "projections": [
+                    {
+                        "field": {
+                            "Measure": {
+                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Property": prop_name
+                            }
+                        },
+                        "queryRef": f"{table_name}.{prop_name}"
+                    }
+                ]
+            }
+        }
+    elif pbi_type in ["barChart", "columnChart", "lineChart", "areaChart", "pieChart", "donutChart"]:
+        # Chart Visual Projections (Category + Y Measure/Value)
+        cat_prop = mapped_field or "State"
+        val_prop = measure_name or "TOTAL CONFIRMED"
+        
+        query_state = {
+            "Category": {
+                "projections": [
+                    {
+                        "field": {
+                            "Column": {
+                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Property": cat_prop
+                            }
+                        },
+                        "queryRef": f"{table_name}.{cat_prop}"
+                    }
+                ]
+            },
+            "Y": {
+                "projections": [
+                    {
+                        "field": {
+                            "Measure": {
+                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Property": val_prop
+                            }
+                        },
+                        "queryRef": f"{table_name}.{val_prop}"
+                    }
+                ]
+            }
+        }
+    elif pbi_type == "slicer":
+        # Slicer Visual Projection
+        prop_name = mapped_field or "State"
+        query_state = {
+            "Values": {
+                "projections": [
+                    {
+                        "field": {
+                            "Column": {
+                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Property": prop_name
+                            }
+                        },
+                        "queryRef": f"{table_name}.{prop_name}"
+                    }
+                ]
+            }
+        }
+    else:
+        # Default TableEx Projection
+        prop_name = mapped_field or "State"
+        query_state = {
+            "Values": {
+                "projections": [
+                    {
+                        "field": {
+                            "Column": {
+                                "Expression": { "SourceRef": { "Entity": table_name } },
+                                "Property": prop_name
+                            }
+                        },
+                        "queryRef": f"{table_name}.{prop_name}"
+                    }
+                ]
+            }
+        }
 
     visual_json = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
@@ -29,21 +120,7 @@ def build_pbir_visual_json(visual_spec: Dict[str, Any], table_name: str) -> Dict
         "visual": {
             "visualType": pbi_type,
             "query": {
-                "queryState": {
-                    "Values": {
-                        "projections": [
-                            {
-                                "field": {
-                                    "Column": {
-                                        "Expression": { "SourceRef": { "Entity": table_name } },
-                                        "Property": field or "Sales"
-                                    }
-                                },
-                                "queryRef": f"{table_name}.{field or 'Sales'}"
-                            }
-                        ]
-                    }
-                }
+                "queryState": query_state
             },
             "visualCustomizations": {
                 "title": title
