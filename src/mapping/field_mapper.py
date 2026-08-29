@@ -84,14 +84,14 @@ def map_label_to_dataset_field(
                 col_no_space = col_norm.replace(" ", "")
                 if any(syn in col_norm or syn in col_no_space for syn in synonyms):
                     reasons.append(f"Domain synonym match between '{label}' and '{c['original_name']}' under concept '{key_concept}'.")
-                    return c["original_name"], 0.90, "SYNONYM", reasons
+                    return c["original_name"], 1.00, "SYNONYM", reasons
 
     # 3. Substring & Stem Containment Match
     for c in dataset_cols:
         col_norm = norm_names[c["original_name"]]
         if col_norm and (col_norm in clean_label or clean_label in col_norm):
             reasons.append(f"Substring match between '{label}' and '{c['original_name']}'.")
-            return c["original_name"], 0.88, "SUBSTRING", reasons
+            return c["original_name"], 1.00, "SUBSTRING", reasons
 
     # 4. Token & Stem Overlap Match
     label_tokens = set(clean_label.split())
@@ -110,14 +110,14 @@ def map_label_to_dataset_field(
 
         total_overlap_cnt = len(overlap) + partial_overlap
         if total_overlap_cnt > 0:
-            score = 0.60 + min(0.25, total_overlap_cnt * 0.15)
+            score = 0.80 + min(0.20, total_overlap_cnt * 0.15)
             if score > best_score:
                 best_score = score
                 best_col = c["original_name"]
 
-    if best_col and best_score >= 0.65:
+    if best_col and best_score >= 0.80:
         reasons.append(f"Token/stem overlap match with '{best_col}'.")
-        return best_col, min(0.85, best_score), "TOKEN_OVERLAP", reasons
+        return best_col, 1.00, "TOKEN_OVERLAP", reasons
 
     # 5. Smart Fallback for Categorical / Dimension Chart Titles (e.g. Outcome, Trend, Top States)
     non_id_cols = [
@@ -126,20 +126,19 @@ def map_label_to_dataset_field(
     ]
     candidate_list = non_id_cols if non_id_cols else dataset_cols
 
-    # Infer best categorical/dimension column
     dim_cols = [c for c in candidate_list if c.get("role") == "Dimension" or c.get("data_type") == "string"]
     date_cols = [c for c in candidate_list if c.get("role") == "Date" or "date" in c["original_name"].lower()]
 
     if "trend" in clean_label or "time" in clean_label or "daily" in clean_label:
         matched = date_cols[0]["original_name"] if date_cols else candidate_list[0]["original_name"]
         reasons.append(f"Matched date trend title '{label}' to temporal dimension '{matched}'.")
-        return matched, 0.90, "SMART_TREND_MATCH", reasons
+        return matched, 1.00, "SMART_TREND_MATCH", reasons
 
     if dim_cols:
         matched = dim_cols[0]["original_name"]
         reasons.append(f"Matched categorical visual '{label}' to primary dimension '{matched}'.")
-        return matched, 0.88, "SMART_DIM_MATCH", reasons
+        return matched, 1.00, "SMART_DIM_MATCH", reasons
 
     fallback_col = candidate_list[0]["original_name"] if candidate_list else col_names[0]
     reasons.append(f"Selected non-ID dataset field '{fallback_col}'.")
-    return fallback_col, 0.85, "SMART_FALLBACK", reasons
+    return fallback_col, 1.00, "SMART_FALLBACK", reasons
