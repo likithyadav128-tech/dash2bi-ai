@@ -266,7 +266,7 @@ def create_pbit_file(
 
     with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("DataModelSchema", json.dumps(schema_json, indent=2).encode('utf-16le'))
-        zf.writestr("Report/Layout", json.dumps(layout_json, indent=2).encode('utf-16le'))
+        zf.writestr("Report/Layout", json.dumps(layout_json, indent=2).encode('utf-8'))
         zf.writestr("[Content_Types].xml", content_types_xml)
         zf.writestr("Version", version_str)
 

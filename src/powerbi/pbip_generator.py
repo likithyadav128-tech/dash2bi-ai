@@ -259,12 +259,12 @@ def create_pbip_project_folder(
     with open(os.path.join(root_dir, f"{safe_name}.pbip"), 'w', encoding='utf-8') as f:
         json.dump(pbip_content, f, indent=2)
 
-    # 2. Write Report Definition (.Report/definition.pbir & .Report/Layout)
+    # 2. Write Report Definition (.Report/definition.pbir & .Report/Layout in UTF-8)
     with open(os.path.join(report_dir, "definition.pbir"), 'w', encoding='utf-8') as f:
         f.write(generate_definition_pbir(model_folder_name))
 
     classic_layout_dict = generate_classic_report_layout(table_name, mapped_visuals, dataset_cols, measures)
-    with open(os.path.join(report_dir, "Layout"), 'w', encoding='utf-16le') as f:
+    with open(os.path.join(report_dir, "Layout"), 'w', encoding='utf-8') as f:
         json.dump(classic_layout_dict, f, indent=2)
 
     # 3. Write Semantic Model (.SemanticModel/definition.pbism, model.bim, & TMDL)
