@@ -1,6 +1,6 @@
 """
 PBIT (Power BI Template) Generator for Dash2BI AI.
-Generates single-file Power BI Report Templates (.pbit) containing DataModelSchema and Report Layout JSON.
+Generates single-file Power BI Report Templates (.pbit) containing DataModelSchema and Report Layout JSON with visual containers.
 """
 
 import os
@@ -15,11 +15,12 @@ def build_data_model_schema_json(
     measures: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
     """Generates DataModelSchema JSON for .pbit file."""
+    safe_table = table_name.replace(" ", "_")
     columns = []
     for col in dataset_cols:
         columns.append({
             "name": col["original_name"],
-            "dataType": col["data_type"],
+            "dataType": col.get("data_type", "string"),
             "sourceColumn": col["original_name"]
         })
 
@@ -32,18 +33,18 @@ def build_data_model_schema_json(
         })
 
     return {
-        "name": "Dash2BI_Model",
+        "name": f"{safe_table}_Model",
         "compatibilityLevel": 1550,
         "model": {
             "culture": "en-US",
             "tables": [
                 {
-                    "name": table_name,
+                    "name": safe_table,
                     "columns": columns,
                     "measures": model_measures,
                     "partitions": [
                         {
-                            "name": table_name,
+                            "name": safe_table,
                             "mode": "import",
                             "source": {
                                 "type": "m",
@@ -64,11 +65,80 @@ def create_pbit_file(
     measures: List[Dict[str, Any]]
 ) -> bytes:
     """
-    Creates a single valid Power BI Template (.pbit) binary ZIP archive.
+    Creates a single valid Power BI Template (.pbit) binary ZIP archive with visual containers.
     """
+    safe_table = table_name.replace(" ", "_")
     schema_json = build_data_model_schema_json(table_name, dataset_cols, measures)
     
-    # Layout JSON
+    visual_containers = []
+    for idx, v in enumerate(mapped_visuals):
+        v_id = v["visual_id"]
+        pbi_type = v.get("powerbi_type", "card")
+        layout = v.get("layout", {"x": 20, "y": 20, "width": 300, "height": 110})
+        title = v.get("title", "")
+        mapped_field = v.get("mapped_field", "")
+        measure_name = v.get("measure_name", title)
+
+        prop_name = measure_name if measure_name else (mapped_field or "Confirmed")
+
+        config_obj = {
+            "name": v_id,
+            "layouts": [
+                {
+                    "id": 0,
+                    "position": {
+                        "x": layout.get("x", 20),
+                        "y": layout.get("y", 20),
+                        "z": 1000 + idx,
+                        "width": layout.get("width", 300),
+                        "height": layout.get("height", 110)
+                    }
+                }
+            ],
+            "singleVisual": {
+                "visualType": pbi_type,
+                "projections": {
+                    "Fields" if pbi_type == "card" else ("Values" if pbi_type in ["slicer", "tableEx"] else "Y"): [
+                        {
+                            "queryRef": f"{safe_table}.{prop_name}"
+                        }
+                    ]
+                },
+                "prototypeQuery": {
+                    "Version": 2,
+                    "From": [
+                        {
+                            "Name": "t",
+                            "Entity": safe_table,
+                            "Type": 0
+                        }
+                    ],
+                    "Select": [
+                        {
+                            "Measure": {
+                                "Expression": {
+                                    "SourceRef": {
+                                        "Source": "t"
+                                    }
+                                },
+                                "Property": prop_name
+                            },
+                            "Name": f"{safe_table}.{prop_name}"
+                        }
+                    ]
+                }
+            }
+        }
+
+        visual_containers.append({
+            "x": layout.get("x", 20),
+            "y": layout.get("y", 20),
+            "z": 1000 + idx,
+            "width": layout.get("width", 300),
+            "height": layout.get("height", 110),
+            "config": json.dumps(config_obj)
+        })
+
     layout_json = {
         "id": 0,
         "resourcePackage": { "items": [] },
@@ -78,7 +148,7 @@ def create_pbit_file(
                 "displayName": "Reconstructed Dashboard",
                 "width": 1280,
                 "height": 720,
-                "visualContainers": []
+                "visualContainers": visual_containers
             }
         ]
     }
