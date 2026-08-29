@@ -1,6 +1,7 @@
 """
 Model BIM Generator for Dash2BI AI.
 Generates model.bim (Tabular Object Model JSON) required by Power BI Desktop for Semantic Models.
+Guarantees unique column and measure collections.
 """
 
 import json
@@ -11,24 +12,36 @@ def generate_model_bim_json(
     dataset_cols: List[Dict[str, Any]],
     measures: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
-    """Generates complete model.bim JSON structure."""
+    """Generates complete model.bim JSON structure with unique measure collections."""
     safe_table = table_name.replace(" ", "_")
     columns = []
+    seen_col_names = set()
+    
     for col in dataset_cols:
+        col_name = col["original_name"].strip()
+        if col_name.lower() in seen_col_names:
+            continue
+        seen_col_names.add(col_name.lower())
         columns.append({
-            "name": col["original_name"],
+            "name": col_name,
             "dataType": col.get("data_type", "string"),
-            "sourceColumn": col["original_name"],
+            "sourceColumn": col_name,
             "summarizeBy": "sum" if col["role"] == "Measure" else "none"
         })
 
     model_measures = []
+    seen_m_names = set()
     for m in measures:
+        m_name = m["measure_name"].strip()
+        if m_name.lower() in seen_m_names or m_name.lower() in seen_col_names:
+            continue
+        seen_m_names.add(m_name.lower())
+
         expr = m["dax_formula"].split("\n") if "\n" in m["dax_formula"] else [m["dax_formula"]]
         model_measures.append({
-            "name": m["measure_name"],
+            "name": m_name,
             "expression": expr,
-            "formatString": "$#,##0.00" if "Sales" in m["measure_name"] or "Profit" in m["measure_name"] else ("0.0%" if "Margin" in m["measure_name"] else "#,##0")
+            "formatString": "$#,##0.00" if "Sales" in m_name or "Profit" in m_name else ("0.0%" if "Margin" in m_name else "#,##0")
         })
 
     m_partition_expression = [
