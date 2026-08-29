@@ -1,11 +1,12 @@
 """
 PBIP (Power BI Project) Root Generator for Dash2BI AI.
-Assembles the complete Power BI Project directory structure:
+Assembles complete Power BI Project directory structure supporting both PBIP Classic Layout and PBIR Enhanced formats:
 ProjectName/
   ProjectName.pbip
   dataset.csv
   ProjectName.Report/
     definition.pbir
+    Layout
     definition/
       version.json
       report.json
@@ -34,6 +35,98 @@ from src.powerbi.report_generator import build_pbir_visual_json
 from src.powerbi.tmdl_generator import generate_model_tmdl, generate_table_tmdl
 from src.powerbi.model_bim_generator import generate_model_bim_json
 from src.utils.logging import log_event
+
+def generate_classic_report_layout(
+    table_name: str,
+    mapped_visuals: List[Dict[str, Any]],
+    dataset_cols: List[Dict[str, Any]],
+    measures: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Generates classic Report/Layout JSON required by default Power BI Desktop without PBIR preview feature."""
+    safe_table = table_name.replace(" ", "_")
+    visual_containers = []
+    
+    for idx, v in enumerate(mapped_visuals):
+        v_id = v["visual_id"]
+        pbi_type = v.get("powerbi_type", "card")
+        layout = v.get("layout", {"x": 20, "y": 20, "width": 300, "height": 110})
+        title = v.get("title", "")
+        mapped_field = v.get("mapped_field", "")
+        measure_name = v.get("measure_name", title)
+        
+        prop_name = measure_name if measure_name else (mapped_field or "Confirmed")
+        
+        config_obj = {
+            "name": v_id,
+            "layouts": [
+                {
+                    "id": 0,
+                    "position": {
+                        "x": layout.get("x", 20),
+                        "y": layout.get("y", 20),
+                        "z": 1000 + idx,
+                        "width": layout.get("width", 300),
+                        "height": layout.get("height", 110)
+                    }
+                }
+            ],
+            "singleVisual": {
+                "visualType": pbi_type,
+                "projections": {
+                    "Fields" if pbi_type == "card" else ("Values" if pbi_type in ["slicer", "tableEx"] else "Y"): [
+                        {
+                            "queryRef": f"{safe_table}.{prop_name}"
+                        }
+                    ]
+                },
+                "prototypeQuery": {
+                    "Version": 2,
+                    "From": [
+                        {
+                            "Name": "t",
+                            "Entity": safe_table,
+                            "Type": 0
+                        }
+                    ],
+                    "Select": [
+                        {
+                            "Measure": {
+                                "Expression": {
+                                    "SourceRef": {
+                                        "Source": "t"
+                                    }
+                                },
+                                "Property": prop_name
+                            },
+                            "Name": f"{safe_table}.{prop_name}"
+                        }
+                    ]
+                }
+            }
+        }
+        
+        visual_containers.append({
+            "x": layout.get("x", 20),
+            "y": layout.get("y", 20),
+            "z": 1000 + idx,
+            "width": layout.get("width", 300),
+            "height": layout.get("height", 110),
+            "config": json.dumps(config_obj)
+        })
+
+    return {
+        "id": 0,
+        "resourcePackage": { "items": [] },
+        "sections": [
+            {
+                "name": "ReportSection1",
+                "displayName": "Reconstructed Dashboard",
+                "width": 1280,
+                "height": 720,
+                "visualContainers": visual_containers
+            }
+        ]
+    }
 
 def create_pbip_project_folder(
     project_name: str,
@@ -70,7 +163,7 @@ def create_pbip_project_folder(
     with open(os.path.join(root_dir, "dataset.csv"), 'wb') as f:
         f.write(csv_content)
 
-    # 1. Write Root .pbip File (Strict Power BI Desktop Schema Regex Match)
+    # 1. Write Root .pbip File
     pbip_content = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json",
         "version": "1.0",
@@ -85,21 +178,24 @@ def create_pbip_project_folder(
     with open(os.path.join(root_dir, f"{safe_name}.pbip"), 'w', encoding='utf-8') as f:
         json.dump(pbip_content, f, indent=2)
 
-    # 2. Write Report Definition (.Report/definition.pbir & .Report/definition/version.json & report.json)
+    # 2. Write Classic Report Layout (.Report/Layout) for Standard Power BI Desktop
+    classic_layout_dict = generate_classic_report_layout(table_name, mapped_visuals, dataset_cols, measures)
+    with open(os.path.join(report_dir, "Layout"), 'w', encoding='utf-16le') as f:
+        json.dump(classic_layout_dict, f, indent=2)
+
+    # 3. Write PBIR Definition (.Report/definition.pbir & .Report/definition/...) for PBIR Preview Power BI Desktop
     with open(os.path.join(report_dir, "definition.pbir"), 'w', encoding='utf-8') as f:
         f.write(generate_definition_pbir(model_folder_name))
 
     report_def_dir = os.path.join(report_dir, "definition")
     os.makedirs(report_def_dir, exist_ok=True)
 
-    # Write version.json and report.json required by Power BI Desktop PBIR schema
     with open(os.path.join(report_def_dir, "version.json"), 'w', encoding='utf-8') as f:
         f.write(generate_version_json())
 
     with open(os.path.join(report_def_dir, "report.json"), 'w', encoding='utf-8') as f:
         f.write(generate_report_json())
 
-    # Pages structure
     pages_dir = os.path.join(report_def_dir, "pages")
     sec1_dir = os.path.join(pages_dir, "ReportSection1")
     visuals_dir = os.path.join(sec1_dir, "visuals")
@@ -111,7 +207,6 @@ def create_pbip_project_folder(
     with open(os.path.join(sec1_dir, "page.json"), 'w', encoding='utf-8') as f:
         f.write(generate_page_json("Reconstructed Dashboard"))
 
-    # Write each visual.json
     for v in mapped_visuals:
         v_id = v["visual_id"]
         v_folder = os.path.join(visuals_dir, v_id)
@@ -120,7 +215,7 @@ def create_pbip_project_folder(
         with open(os.path.join(v_folder, "visual.json"), 'w', encoding='utf-8') as f:
             json.dump(v_json, f, indent=2)
 
-    # 3. Write Semantic Model (.SemanticModel/definition.pbism & model.bim)
+    # 4. Write Semantic Model (.SemanticModel/definition.pbism & model.bim)
     pbism_content = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json",
         "version": "1.0",
@@ -129,7 +224,6 @@ def create_pbip_project_folder(
     with open(os.path.join(model_dir, "definition.pbism"), 'w', encoding='utf-8') as f:
         json.dump(pbism_content, f, indent=2)
 
-    # Write model.bim required by Power BI Desktop
     model_bim_dict = generate_model_bim_json(table_name, dataset_cols, measures)
     with open(os.path.join(model_dir, "model.bim"), 'w', encoding='utf-8') as f:
         json.dump(model_bim_dict, f, indent=2)
@@ -138,14 +232,12 @@ def create_pbip_project_folder(
     tables_dir = os.path.join(model_def_dir, "tables")
     os.makedirs(tables_dir, exist_ok=True)
 
-    # Also place dataset.csv inside model definition
     with open(os.path.join(model_def_dir, "dataset.csv"), 'wb') as f:
         f.write(csv_content)
 
     with open(os.path.join(model_def_dir, "model.tmdl"), 'w', encoding='utf-8') as f:
         f.write(generate_model_tmdl(safe_name + "_Model", table_name))
 
-    # Build TMDL columns & measures
     tmdl_cols = []
     for c in dataset_cols:
         tmdl_cols.append({
