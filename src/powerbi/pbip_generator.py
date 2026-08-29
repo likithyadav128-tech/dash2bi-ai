@@ -58,9 +58,9 @@ def create_pbip_project_folder(
     os.makedirs(report_dir, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
 
-    # 1. Write Root .pbip File (Strict Power BI Project Schema)
+    # 1. Write Root .pbip File (Strict Power BI Desktop Schema Regex Match)
     pbip_content = {
-        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/pbip/1.0.0/schema.json",
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json",
         "version": "1.0",
         "artifacts": [
             {
