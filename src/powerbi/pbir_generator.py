@@ -1,6 +1,6 @@
 """
 PBIR (Report Definition) Generator for Dash2BI AI.
-Builds definition.pbir, version.json, pages.json, page.json, and visual definitions.
+Builds definition.pbir, version.json, report.json, pages.json, page.json, and visual definitions.
 """
 
 import json
@@ -11,7 +11,7 @@ def generate_definition_pbir(semantic_model_folder_name: str) -> str:
     """Generates content for definition.pbir matching Power BI Desktop definitionProperties schema regex."""
     data = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/1.0.0/schema.json",
-        "version": "4.0",
+        "version": "1.0",
         "datasetReference": {
             "byPath": {
                 "path": f"../{semantic_model_folder_name}"
@@ -24,7 +24,22 @@ def generate_version_json() -> str:
     """Generates content for definition/version.json."""
     data = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/version/1.0.0/schema.json",
-        "version": "2.0"
+        "version": "1.0"
+    }
+    return json.dumps(data, indent=2)
+
+def generate_report_json() -> str:
+    """Generates content for definition/report.json."""
+    data = {
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/1.0.0/schema.json",
+        "themeCollection": {
+            "baseTheme": {
+                "name": "CY24SU06",
+                "version": "5.57",
+                "type": "Default"
+            }
+        },
+        "activeSectionName": "ReportSection1"
     }
     return json.dumps(data, indent=2)
 
