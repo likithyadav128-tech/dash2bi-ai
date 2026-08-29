@@ -1,6 +1,6 @@
 """
 Dash2BI AI — Main Streamlit Application Entrypoint.
-Reconstructs Power BI Reports and Power BI Projects (PBIP/PBIR/TMDL) from Excel/CSV Datasets and HTML Dashboard Designs.
+Reconstructs Power BI Reports, Power BI Templates (.pbit), and Power BI Projects (.pbip/PBIR/TMDL) from Excel/CSV Datasets and HTML Dashboard Designs.
 """
 
 import os
@@ -23,6 +23,7 @@ from src.mapping.mapping_validator import compute_reconstruction_score
 from src.dax.measure_generator import generate_dax_for_mapped_visuals
 from src.powerbi.model_generator import build_semantic_model_spec
 from src.powerbi.pbip_generator import create_pbip_project_folder
+from src.powerbi.pbit_generator import create_pbit_file
 from src.powerbi.validation import validate_project_before_export
 from src.powerbi.export_manager import package_pbip_as_zip, generate_analysis_report_markdown
 
@@ -297,6 +298,7 @@ elif st.session_state.step == 4:
     else:
         p = st.session_state.dataset_profile
         mapped = st.session_state.mapped_visuals
+        ds_file = st.session_state.dataset_file
 
         # Generate DAX measures
         measures = generate_dax_for_mapped_visuals(p.table_name, mapped, p.columns_info)
@@ -306,9 +308,9 @@ elif st.session_state.step == 4:
         render_validation_summary(val_summary)
 
         st.markdown("---")
-        st.subheader("⚡ Power BI Project Export Center")
+        st.subheader("⚡ Power BI Export Center")
 
-        # Generate PBIP Project in Temp Directory
+        # Generate PBIP Project and PBIT Template
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = create_pbip_project_folder(
                 project_name="Dash2BI_Reconstructed_Report",
@@ -316,20 +318,33 @@ elif st.session_state.step == 4:
                 dataset_cols=p.columns_info,
                 mapped_visuals=mapped,
                 measures=measures,
-                output_dir=temp_dir
+                output_dir=temp_dir,
+                raw_dataset_bytes=ds_file["bytes"] if ds_file else None
             )
 
             zip_bytes = package_pbip_as_zip(project_dir)
+            pbit_bytes = create_pbit_file("Dash2BI_Reconstructed_Report", p.table_name, p.columns_info, mapped, measures)
             report_md = generate_analysis_report_markdown(p.to_dict(), st.session_state.html_visuals, mapped, compute_reconstruction_score(mapped))
 
-            st.download_button(
-                label="📦 Download Power BI Project (.pbip ZIP Archive)",
-                data=zip_bytes,
-                file_name="Dash2BI_PowerBI_Project.zip",
-                mime="application/zip",
-                type="primary"
-            )
+            btn_col1, btn_col2 = st.columns(2)
+            with btn_col1:
+                st.download_button(
+                    label="📦 Download Power BI Project (.pbip ZIP Archive)",
+                    data=zip_bytes,
+                    file_name="Dash2BI_PowerBI_Project.zip",
+                    mime="application/zip",
+                    type="primary"
+                )
+            with btn_col2:
+                st.download_button(
+                    label="📄 Download Power BI Template (.pbit Single File)",
+                    data=pbit_bytes,
+                    file_name="Dash2BI_Reconstructed_Report.pbit",
+                    mime="application/octet-stream",
+                    type="secondary"
+                )
 
+            st.markdown("---")
             d_col1, d_col2 = st.columns(2)
             with d_col1:
                 st.download_button(
@@ -352,14 +367,11 @@ elif st.session_state.step == 4:
             ### 📌 Power BI Desktop Opening Instructions
             
             > [!IMPORTANT]
-            > **Generated Format:** **Power BI Project (.pbip)**
-            > 
-            > Pure server environment deployments cannot directly serialize closed proprietary `.pbix` binary report packages. 
-            > Dash2BI AI generates fully compliant **Microsoft Power BI Project (.pbip)** artifacts containing complete **PBIR** report definitions and **TMDL** semantic models.
+            > **Export Formats Included:**
+            > 1. **Power BI Project (.pbip ZIP Archive):** Unzip and double-click `Dash2BI_Reconstructed_Report.pbip`.
+            > 2. **Power BI Template (.pbit Single File):** Double-click `Dash2BI_Reconstructed_Report.pbit`.
             
-            **How to open and save as PBIX:**
-            1. Click **Download Power BI Project (.pbip ZIP Archive)** above.
-            2. Extract the downloaded `Dash2BI_PowerBI_Project.zip` folder.
-            3. Double-click `Dash2BI_Reconstructed_Report.pbip` to open directly in **Power BI Desktop**.
-            4. Inside Power BI Desktop, click **File → Save As** and select **Power BI Report (*.pbix)**.
+            **How to save as .pbix file:**
+            1. Open either the `.pbip` or `.pbit` file in **Power BI Desktop**.
+            2. Inside Power BI Desktop, click **File → Save As** and select **Power BI Report (*.pbix)**.
         """)

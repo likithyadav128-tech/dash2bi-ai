@@ -3,6 +3,7 @@ PBIP (Power BI Project) Root Generator for Dash2BI AI.
 Assembles the complete Power BI Project directory structure:
 ProjectName/
   ProjectName.pbip
+  dataset.csv
   ProjectName.Report/
     definition.pbir
     definition/
@@ -24,7 +25,7 @@ import os
 import json
 import shutil
 import tempfile
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from src.powerbi.pbir_generator import generate_definition_pbir, generate_pages_json, generate_page_json
 from src.powerbi.report_generator import build_pbir_visual_json
 from src.powerbi.tmdl_generator import generate_model_tmdl, generate_table_tmdl
@@ -36,7 +37,8 @@ def create_pbip_project_folder(
     dataset_cols: List[Dict[str, Any]],
     mapped_visuals: List[Dict[str, Any]],
     measures: List[Dict[str, Any]],
-    output_dir: str
+    output_dir: str,
+    raw_dataset_bytes: Optional[bytes] = None
 ) -> str:
     """
     Creates the complete valid Power BI Project (.pbip) folder layout inside output_dir.
@@ -57,6 +59,12 @@ def create_pbip_project_folder(
     # Create directory tree
     os.makedirs(report_dir, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
+
+    # Write dataset.csv if provided
+    csv_header = ",".join(c["original_name"] for c in dataset_cols) + "\n"
+    csv_content = raw_dataset_bytes if raw_dataset_bytes else csv_header.encode('utf-8')
+    with open(os.path.join(root_dir, "dataset.csv"), 'wb') as f:
+        f.write(csv_content)
 
     # 1. Write Root .pbip File (Strict Power BI Desktop Schema Regex Match)
     pbip_content = {
@@ -111,6 +119,10 @@ def create_pbip_project_folder(
     tables_dir = os.path.join(model_def_dir, "tables")
     os.makedirs(tables_dir, exist_ok=True)
 
+    # Also place dataset.csv inside model definition
+    with open(os.path.join(model_def_dir, "dataset.csv"), 'wb') as f:
+        f.write(csv_content)
+
     with open(os.path.join(model_def_dir, "model.tmdl"), 'w', encoding='utf-8') as f:
         f.write(generate_model_tmdl(safe_name + "_Model", table_name))
 
@@ -131,7 +143,8 @@ def create_pbip_project_folder(
             "formatString": "$#,##0.00" if "Sales" in m["measure_name"] or "Profit" in m["measure_name"] else ("0.0%" if "Margin" in m["measure_name"] else "#,##0")
         })
 
-    with open(os.path.join(tables_dir, f"{table_name}.tmdl"), 'w', encoding='utf-8') as f:
+    safe_table = table_name.replace(" ", "_")
+    with open(os.path.join(tables_dir, f"{safe_table}.tmdl"), 'w', encoding='utf-8') as f:
         f.write(generate_table_tmdl(table_name, tmdl_cols, tmdl_measures))
 
     log_event("powerbi", f"Successfully assembled PBIP project structure at '{root_dir}'")

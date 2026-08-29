@@ -7,17 +7,30 @@ from typing import Dict, Any, List
 
 def generate_model_tmdl(model_name: str, table_name: str) -> str:
     """Generates root model.tmdl file content."""
+    safe_table = table_name.replace(" ", "_")
     return f"""model {model_name}
 	culture: en-US
 	defaultPowerBIDataSourceVersion: powerBI_V3
 
-ref table {table_name}
+ref table {safe_table}
 """
 
 def generate_table_tmdl(table_name: str, columns: List[Dict[str, Any]], measures: List[Dict[str, Any]]) -> str:
-    """Generates TMDL table definition file content."""
-    lines = [f"table {table_name}"]
+    """Generates TMDL table definition file content with M query partition."""
+    safe_table = table_name.replace(" ", "_")
+    lines = [f"table {safe_table}"]
     lines.append("\tlineageTag: 00000000-0000-0000-0000-000000000001\n")
+
+    # M Query Source Partition
+    num_cols = len(columns)
+    lines.append(f"\tpartition {safe_table} = m")
+    lines.append("\t\tmode: import")
+    lines.append("\t\tsource =")
+    lines.append("\t\t\tlet")
+    lines.append(f'\t\t\t    Source = Csv.Document(File.Contents("dataset.csv"), [Delimiter=",", Columns={num_cols}, Encoding=65001, QuoteStyle=QuoteStyle.None]),')
+    lines.append('\t\t\t    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])')
+    lines.append("\t\t\tin")
+    lines.append('\t\t\t    #"Promoted Headers"\n')
 
     # Columns
     for col in columns:
