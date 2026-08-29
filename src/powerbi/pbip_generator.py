@@ -15,6 +15,7 @@ ProjectName/
             visual_1/visual.json
   ProjectName.SemanticModel/
     definition.pbism
+    model.bim
     definition/
       model.tmdl
       tables/
@@ -29,6 +30,7 @@ from typing import Dict, Any, List, Optional
 from src.powerbi.pbir_generator import generate_definition_pbir, generate_pages_json, generate_page_json
 from src.powerbi.report_generator import build_pbir_visual_json
 from src.powerbi.tmdl_generator import generate_model_tmdl, generate_table_tmdl
+from src.powerbi.model_bim_generator import generate_model_bim_json
 from src.utils.logging import log_event
 
 def create_pbip_project_folder(
@@ -106,7 +108,7 @@ def create_pbip_project_folder(
         with open(os.path.join(v_folder, "visual.json"), 'w', encoding='utf-8') as f:
             json.dump(v_json, f, indent=2)
 
-    # 3. Write Semantic Model (.SemanticModel/definition.pbism)
+    # 3. Write Semantic Model (.SemanticModel/definition.pbism & model.bim)
     pbism_content = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json",
         "version": "1.0",
@@ -114,6 +116,11 @@ def create_pbip_project_folder(
     }
     with open(os.path.join(model_dir, "definition.pbism"), 'w', encoding='utf-8') as f:
         json.dump(pbism_content, f, indent=2)
+
+    # Write model.bim required by Power BI Desktop
+    model_bim_dict = generate_model_bim_json(table_name, dataset_cols, measures)
+    with open(os.path.join(model_dir, "model.bim"), 'w', encoding='utf-8') as f:
+        json.dump(model_bim_dict, f, indent=2)
 
     model_def_dir = os.path.join(model_dir, "definition")
     tables_dir = os.path.join(model_def_dir, "tables")
