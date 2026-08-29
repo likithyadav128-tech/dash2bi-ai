@@ -96,7 +96,7 @@ def create_pbit_file(
             single_visual = {
                 "visualType": "card",
                 "projections": {
-                    "Fields": [
+                    "Values": [
                         {
                             "queryRef": f"{safe_table}.{prop_name}"
                         }

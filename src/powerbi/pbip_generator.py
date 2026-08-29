@@ -52,7 +52,7 @@ def generate_classic_report_layout(
             single_visual = {
                 "visualType": "card",
                 "projections": {
-                    "Fields": [
+                    "Values": [
                         {
                             "queryRef": f"{safe_table}.{prop_name}"
                         }
