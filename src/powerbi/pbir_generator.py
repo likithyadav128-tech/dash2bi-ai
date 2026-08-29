@@ -10,6 +10,7 @@ from src.powerbi.report_generator import build_pbir_visual_json
 def generate_definition_pbir(semantic_model_folder_name: str) -> str:
     """Generates content for definition.pbir."""
     data = {
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pbir/1.0.0/schema.json",
         "version": "4.0",
         "datasetReference": {
             "byPath": {

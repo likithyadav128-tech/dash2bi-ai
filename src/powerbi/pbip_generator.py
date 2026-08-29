@@ -58,12 +58,16 @@ def create_pbip_project_folder(
     os.makedirs(report_dir, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
 
-    # 1. Write Root .pbip File
+    # 1. Write Root .pbip File (Strict Power BI Project Schema)
     pbip_content = {
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/pbip/1.0.0/schema.json",
         "version": "1.0",
         "artifacts": [
-            { "report": { "path": report_folder_name } },
-            { "semanticModel": { "path": model_folder_name } }
+            {
+                "report": {
+                    "path": report_folder_name
+                }
+            }
         ]
     }
     with open(os.path.join(root_dir, f"{safe_name}.pbip"), 'w', encoding='utf-8') as f:
@@ -94,9 +98,14 @@ def create_pbip_project_folder(
         with open(os.path.join(v_folder, "visual.json"), 'w', encoding='utf-8') as f:
             json.dump(v_json, f, indent=2)
 
-    # 3. Write Semantic Model (.SemanticModel/)
+    # 3. Write Semantic Model (.SemanticModel/definition.pbism)
+    pbism_content = {
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definition/pbism/1.0.0/schema.json",
+        "version": "1.0",
+        "settings": {}
+    }
     with open(os.path.join(model_dir, "definition.pbism"), 'w', encoding='utf-8') as f:
-        json.dump({"version": "1.0", "settings": {}}, f, indent=2)
+        json.dump(pbism_content, f, indent=2)
 
     model_def_dir = os.path.join(model_dir, "definition")
     tables_dir = os.path.join(model_def_dir, "tables")
