@@ -89,25 +89,14 @@ def create_pbit_file(
         measure_name = v.get("measure_name", title)
 
         prop_name = measure_name if measure_name else (mapped_field or "Confirmed")
+        dim_prop = mapped_field or "State"
+        val_prop = measure_name or "TOTAL CONFIRMED"
 
-        config_obj = {
-            "name": v_id,
-            "layouts": [
-                {
-                    "id": 0,
-                    "position": {
-                        "x": layout.get("x", 20),
-                        "y": layout.get("y", 20),
-                        "z": 1000 + idx,
-                        "width": layout.get("width", 300),
-                        "height": layout.get("height", 110)
-                    }
-                }
-            ],
-            "singleVisual": {
-                "visualType": pbi_type,
+        if pbi_type == "card":
+            single_visual = {
+                "visualType": "card",
                 "projections": {
-                    "Fields" if pbi_type == "card" else ("Values" if pbi_type in ["slicer", "tableEx"] else "Y"): [
+                    "Fields": [
                         {
                             "queryRef": f"{safe_table}.{prop_name}"
                         }
@@ -137,6 +126,106 @@ def create_pbit_file(
                     ]
                 }
             }
+        elif pbi_type in ["barChart", "columnChart", "lineChart", "areaChart", "pieChart", "donutChart"]:
+            single_visual = {
+                "visualType": pbi_type,
+                "projections": {
+                    "Category": [
+                        {
+                            "queryRef": f"{safe_table}.{dim_prop}"
+                        }
+                    ],
+                    "Y": [
+                        {
+                            "queryRef": f"{safe_table}.{val_prop}"
+                        }
+                    ]
+                },
+                "prototypeQuery": {
+                    "Version": 2,
+                    "From": [
+                        {
+                            "Name": "t",
+                            "Entity": safe_table,
+                            "Type": 0
+                        }
+                    ],
+                    "Select": [
+                        {
+                            "Column": {
+                                "Expression": {
+                                    "SourceRef": {
+                                        "Source": "t"
+                                    }
+                                },
+                                "Property": dim_prop
+                            },
+                            "Name": f"{safe_table}.{dim_prop}"
+                        },
+                        {
+                            "Measure": {
+                                "Expression": {
+                                    "SourceRef": {
+                                        "Source": "t"
+                                    }
+                                },
+                                "Property": val_prop
+                            },
+                            "Name": f"{safe_table}.{val_prop}"
+                        }
+                    ]
+                }
+            }
+        else:  # slicer, tableEx
+            single_visual = {
+                "visualType": pbi_type,
+                "projections": {
+                    "Values": [
+                        {
+                            "queryRef": f"{safe_table}.{dim_prop}"
+                        }
+                    ]
+                },
+                "prototypeQuery": {
+                    "Version": 2,
+                    "From": [
+                        {
+                            "Name": "t",
+                            "Entity": safe_table,
+                            "Type": 0
+                        }
+                    ],
+                    "Select": [
+                        {
+                            "Column": {
+                                "Expression": {
+                                    "SourceRef": {
+                                        "Source": "t"
+                                    }
+                                },
+                                "Property": dim_prop
+                            },
+                            "Name": f"{safe_table}.{dim_prop}"
+                        }
+                    ]
+                }
+            }
+
+        config_obj = {
+            "name": v_id,
+            "layouts": [
+                {
+                    "id": 0,
+                    "position": {
+                        "x": layout.get("x", 20),
+                        "y": layout.get("y", 20),
+                        "z": 1000 + idx,
+                        "width": layout.get("width", 300),
+                        "height": layout.get("height", 110)
+                    }
+                }
+            ],
+            "singleVisual": single_visual
         }
 
         visual_containers.append({
@@ -155,6 +244,8 @@ def create_pbit_file(
             {
                 "name": "ReportSection1",
                 "displayName": "Reconstructed Dashboard",
+                "filters": "[]",
+                "ordinal": 0,
                 "width": 1280,
                 "height": 720,
                 "visualContainers": visual_containers
