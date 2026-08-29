@@ -1,6 +1,6 @@
 """
 DAX Measure Generator module for Dash2BI AI.
-Synthesizes clean DAX formula expressions for KPIs, aggregations, counts, distinct counts, and ratios.
+Synthesizes clean DAX formula expressions for KPIs, aggregations, counts, distinct counts, ratios, and multi-column domain formulas.
 Guarantees unique measure names preventing Analysis Services collection deserialization collisions.
 """
 
@@ -53,12 +53,18 @@ def generate_dax_for_mapped_visuals(
     """
     Generates DAX measures for all relevant mapped visual components.
     Ensures measure names are strictly unique and do not collide with column or existing measure names.
+    Supports multi-column COVID/Healthcare metric calculations (ConfirmedIndianNational + ConfirmedForeignNational).
     """
     measures = []
     existing_col_names = [c["original_name"] for c in dataset_cols]
     
     # Track used names (columns + measures) to prevent duplicate key errors in Analysis Services
     seen_names = set(c["original_name"].strip().lower() for c in dataset_cols)
+
+    has_indian = "ConfirmedIndianNational" in existing_col_names
+    has_foreign = "ConfirmedForeignNational" in existing_col_names
+    has_cured = "Cured" in existing_col_names
+    has_deaths = "Deaths" in existing_col_names
 
     for v in mapped_visuals:
         if v["html_type"] in ["kpi_card", "metric_card"]:
@@ -75,7 +81,31 @@ def generate_dax_for_mapped_visuals(
             
             seen_names.add(measure_name.lower())
 
-            if matched_field and matched_field in existing_col_names:
+            # Domain specific multi-column composite DAX formulas
+            raw_title_upper = raw_title.upper()
+            if "CONFIRMED" in raw_title_upper and has_indian and has_foreign:
+                formula = f"SUM('{table_name}'[ConfirmedIndianNational]) + SUM('{table_name}'[ConfirmedForeignNational])"
+                measures.append({
+                    "measure_name": measure_name,
+                    "table_name": table_name,
+                    "column_name": "ConfirmedIndianNational",
+                    "aggregation": "SUM",
+                    "dax_formula": formula,
+                    "visual_id": v["visual_id"]
+                })
+                v["measure_name"] = measure_name
+            elif "ACTIVE" in raw_title_upper and has_indian and has_foreign and has_cured and has_deaths:
+                formula = f"(SUM('{table_name}'[ConfirmedIndianNational]) + SUM('{table_name}'[ConfirmedForeignNational])) - SUM('{table_name}'[Cured]) - SUM('{table_name}'[Deaths])"
+                measures.append({
+                    "measure_name": measure_name,
+                    "table_name": table_name,
+                    "column_name": "ConfirmedIndianNational",
+                    "aggregation": "SUM",
+                    "dax_formula": formula,
+                    "visual_id": v["visual_id"]
+                })
+                v["measure_name"] = measure_name
+            elif matched_field and matched_field in existing_col_names:
                 formula = generate_dax_formula(measure_name, table_name, matched_field, agg)
                 measures.append({
                     "measure_name": measure_name,
@@ -85,7 +115,6 @@ def generate_dax_for_mapped_visuals(
                     "dax_formula": formula,
                     "visual_id": v["visual_id"]
                 })
-                # Update mapped visual with measure_name reference
                 v["measure_name"] = measure_name
             elif agg == "DIVIDE":
                 num = "Profit" if "Profit" in existing_col_names else (existing_col_names[0] if existing_col_names else "Field1")
