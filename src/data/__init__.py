@@ -12,6 +12,7 @@ from src.data.schema_detector import (
     ROLE_IDENTIFIER,
     ROLE_CATEGORICAL,
 )
+from src.data.auto_visual_generator import auto_generate_visuals
 
 __all__ = [
     "load_dataset_file",
@@ -26,4 +27,5 @@ __all__ = [
     "ROLE_DATE",
     "ROLE_IDENTIFIER",
     "ROLE_CATEGORICAL",
+    "auto_generate_visuals",
 ]
