@@ -15,7 +15,7 @@ import pandas as pd
 from src.utils.logging import log_event
 from src.utils.file_validation import validate_dataset_file, validate_html_file
 from src.utils.errors import Dash2BIError
-from src.data.dataset_loader import inspect_excel_sheets
+from src.data.dataset_loader import load_dataset_file, inspect_excel_sheets
 from src.data.dataset_profiler import profile_dataset, DatasetProfile
 from src.data.auto_visual_generator import auto_generate_visuals
 from src.html.html_loader import load_html_dashboard
@@ -143,6 +143,19 @@ else:
 
 # Version compatibility badge
 st.sidebar.caption("✓ Target: Power BI Desktop v2.157 (Aug 2026)")
+
+# Helper to load dataframe
+def get_raw_dataframe():
+    if st.session_state.dataset_file:
+        try:
+            return load_dataset_file(
+                st.session_state.dataset_file["bytes"],
+                st.session_state.dataset_file["name"],
+                st.session_state.selected_sheet
+            )
+        except Exception:
+            return None
+    return None
 
 # ============================================================
 # STEP 1 — UPLOAD PAGE
@@ -316,6 +329,7 @@ elif st.session_state.step == 3:
     else:
         # Compute Reconstruction Score
         score_data = compute_reconstruction_score(st.session_state.mapped_visuals)
+        raw_df = get_raw_dataframe()
         
         # Display Score Metrics
         sc1, sc2, sc3, sc4 = st.columns(4)
@@ -330,10 +344,10 @@ elif st.session_state.step == 3:
 
         st.markdown("---")
 
-        tab_wireframe, tab_map = st.tabs(["🖥️ Power BI Canvas Wireframe", "🧩 Field & Visual Mapping Editor"])
+        tab_wireframe, tab_map = st.tabs(["🖥️ Power BI Dashboard Visual Preview", "🧩 Field & Visual Mapping Editor"])
 
         with tab_wireframe:
-            render_reconstruction_wireframe(st.session_state.mapped_visuals, score_data)
+            render_reconstruction_wireframe(st.session_state.mapped_visuals, score_data, raw_df)
 
         with tab_map:
             updated_visuals = render_mapping_review_table(
@@ -362,6 +376,7 @@ elif st.session_state.step == 4:
         p = st.session_state.dataset_profile
         mapped = st.session_state.mapped_visuals
         ds_file = st.session_state.dataset_file
+        raw_df = get_raw_dataframe()
 
         # Generate DAX measures
         measures = generate_dax_for_mapped_visuals(p.table_name, mapped, p.columns_info)
@@ -369,6 +384,10 @@ elif st.session_state.step == 4:
         # Run Pre-flight Validation
         is_ready, val_summary = validate_project_before_export(p.columns_info, mapped, measures)
         render_validation_summary(val_summary)
+
+        st.markdown("---")
+        # Render Live Visual Mockup Preview in Step 4
+        render_reconstruction_wireframe(mapped, compute_reconstruction_score(mapped), raw_df)
 
         st.markdown("---")
         st.subheader("⚡ Power BI Report Downloads (Version 2.157.879.0 Compatible)")
