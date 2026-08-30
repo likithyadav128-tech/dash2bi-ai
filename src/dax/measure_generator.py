@@ -72,11 +72,15 @@ def generate_dax_for_mapped_visuals(
             matched_field = v.get("mapped_field")
             agg = v.get("aggregation", "SUM")
 
-            # Deduplicate measure name
+            # Deduplicate measure name cleanly
             measure_name = raw_title
+            if measure_name.lower() in seen_names:
+                measure_name = f"Total {raw_title}" if not raw_title.lower().startswith("total") else f"{raw_title} Metric"
+            
             counter = 2
+            base_name = measure_name
             while measure_name.lower() in seen_names:
-                measure_name = f"{raw_title} {counter}"
+                measure_name = f"{base_name} {counter}"
                 counter += 1
             
             seen_names.add(measure_name.lower())
