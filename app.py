@@ -148,11 +148,15 @@ st.sidebar.caption("✓ Target: Power BI Desktop v2.157 (Aug 2026)")
 def get_raw_dataframe():
     if st.session_state.dataset_file:
         try:
-            return load_dataset_file(
-                st.session_state.dataset_file["bytes"],
+            result = load_dataset_file(
                 st.session_state.dataset_file["name"],
+                st.session_state.dataset_file["bytes"],
                 st.session_state.selected_sheet
             )
+            # load_dataset_file returns (df, meta) tuple
+            if isinstance(result, tuple):
+                return result[0]
+            return result
         except Exception:
             return None
     return None

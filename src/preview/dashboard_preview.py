@@ -9,6 +9,78 @@ import plotly.graph_objects as go
 import pandas as pd
 from typing import List, Dict, Any, Optional
 
+def _find_numeric_col(df: pd.DataFrame, hint: str = "") -> Optional[str]:
+    """Find the best numeric column from df, preferring one matching hint."""
+    num_cols = df.select_dtypes(include=["number"]).columns.tolist()
+    if not num_cols:
+        return None
+    if hint:
+        hint_lower = hint.strip().lower()
+        for c in num_cols:
+            if c.lower() == hint_lower:
+                return c
+        for c in num_cols:
+            if hint_lower in c.lower() or c.lower() in hint_lower:
+                return c
+    return num_cols[0]
+
+def _find_category_col(df: pd.DataFrame, hint: str = "") -> Optional[str]:
+    """Find the best categorical/string column from df, preferring one matching hint."""
+    cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+    if not cat_cols:
+        return None
+    if hint:
+        hint_lower = hint.strip().lower()
+        for c in cat_cols:
+            if c.lower() == hint_lower:
+                return c
+        for c in cat_cols:
+            if hint_lower in c.lower() or c.lower() in hint_lower:
+                return c
+    return cat_cols[0]
+
+def _find_date_col(df: pd.DataFrame) -> Optional[str]:
+    """Find a date/datetime column."""
+    for c in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[c]):
+            return c
+    # Heuristic: look for column names suggesting date
+    for c in df.columns:
+        if any(kw in c.lower() for kw in ["date", "time", "day", "month", "year", "period"]):
+            try:
+                pd.to_datetime(df[c].dropna().head(20))
+                return c
+            except Exception:
+                continue
+    return None
+
+def _compute_kpi_value(df: pd.DataFrame, visual: Dict[str, Any]) -> str:
+    """Compute the actual KPI numeric value from the dataframe."""
+    field = visual.get("mapped_field", "")
+    title = visual.get("title", "").upper()
+
+    # Try domain-specific composite calculations
+    if "CONFIRMED" in title and "ConfirmedIndianNational" in df.columns:
+        val = df["ConfirmedIndianNational"].sum()
+        if "ConfirmedForeignNational" in df.columns:
+            val += df["ConfirmedForeignNational"].sum()
+        return f"{int(val):,}"
+    if "ACTIVE" in title and "ConfirmedIndianNational" in df.columns and "Cured" in df.columns:
+        conf = df["ConfirmedIndianNational"].sum() + (df["ConfirmedForeignNational"].sum() if "ConfirmedForeignNational" in df.columns else 0)
+        act = conf - df["Cured"].sum() - (df["Deaths"].sum() if "Deaths" in df.columns else 0)
+        return f"{int(act):,}"
+
+    # Try direct field
+    if field and field in df.columns and pd.api.types.is_numeric_dtype(df[field]):
+        return f"{df[field].sum():,.0f}"
+
+    # Try matching field name heuristically
+    num_col = _find_numeric_col(df, field)
+    if num_col:
+        return f"{df[num_col].sum():,.0f}"
+
+    return "N/A"
+
 def render_reconstruction_wireframe(
     mapped_visuals: List[Dict[str, Any]],
     score_data: Dict[str, Any],
@@ -18,9 +90,9 @@ def render_reconstruction_wireframe(
     Renders both a Live Plotly Dashboard Visual Mockup and a 2D Power BI Canvas Layout preview.
     """
     st.markdown("### 🖥️ Power BI Dashboard Visual Preview")
-    st.caption("Live Interactive Mockup & 2D Spatial Layout Preview (1280x720 Canvas)")
+    st.caption("Live Interactive Mockup & 2D Spatial Layout Preview (1280×720 Canvas)")
 
-    # 1. Live Interactive Visual Mockup
+    # Header bar
     st.markdown("""
         <div style="background-color: #1E293B; padding: 12px 20px; border-top-left-radius: 10px; border-top-right-radius: 10px; color: white; font-weight: bold; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
             <span>📊 Power BI Report Canvas — Live Preview</span>
@@ -33,81 +105,113 @@ def render_reconstruction_wireframe(
     with st.container():
         st.markdown('<div style="background: #F1F5F9; border: 1px solid #CBD5E1; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; padding: 20px; margin-bottom: 25px;">', unsafe_allow_html=True)
 
-        # KPI Row
+        # ── KPI Cards Row ──
         kpis = [v for v in mapped_visuals if v["html_type"] in ["kpi_card", "metric_card"]]
         if kpis:
             kpi_cols = st.columns(min(len(kpis), 4))
             for idx, k in enumerate(kpis[:4]):
-                val_str = "0"
-                if raw_df is not None:
-                    field = k.get("mapped_field")
-                    if field and field in raw_df.columns and pd.api.types.is_numeric_dtype(raw_df[field]):
-                        val_str = f"{raw_df[field].sum():,}"
-                    elif "CONFIRMED" in k["title"].upper() and "ConfirmedIndianNational" in raw_df.columns:
-                        conf_tot = raw_df["ConfirmedIndianNational"].sum() + (raw_df["ConfirmedForeignNational"].sum() if "ConfirmedForeignNational" in raw_df.columns else 0)
-                        val_str = f"{conf_tot:,}"
-                    elif "ACTIVE" in k["title"].upper() and "ConfirmedIndianNational" in raw_df.columns and "Cured" in raw_df.columns:
-                        conf_tot = raw_df["ConfirmedIndianNational"].sum() + (raw_df["ConfirmedForeignNational"].sum() if "ConfirmedForeignNational" in raw_df.columns else 0)
-                        act_tot = conf_tot - raw_df["Cured"].sum() - (raw_df["Deaths"].sum() if "Deaths" in raw_df.columns else 0)
-                        val_str = f"{act_tot:,}"
-
                 with kpi_cols[idx % len(kpi_cols)]:
-                    st.metric(
-                        label=k["title"],
-                        value=val_str if val_str != "0" else f"SUM('{k.get('mapped_field', 'Metric')}')",
-                        delta="✓ 100% READY"
-                    )
+                    if raw_df is not None and not raw_df.empty:
+                        val = _compute_kpi_value(raw_df, k)
+                    else:
+                        val = "—"
+                    st.markdown(f"""
+                        <div style="background: white; border-radius: 10px; padding: 18px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-left: 4px solid #3B82F6;">
+                            <div style="font-size: 0.75rem; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">{k['title']}</div>
+                            <div style="font-size: 1.8rem; font-weight: 800; color: #0F172A;">{val}</div>
+                            <div style="font-size: 0.7rem; color: #22C55E; margin-top: 4px;">✓ 100% READY</div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-        st.markdown("---")
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        # Charts Section using Plotly
+        # ── Charts Section ──
         charts = [v for v in mapped_visuals if "chart" in v["html_type"]]
-        if charts and raw_df is not None:
-            c_cols = st.columns(min(len(charts), 2))
+        if charts and raw_df is not None and not raw_df.empty:
+            chart_cols = st.columns(min(len(charts), 2))
             for idx, c_spec in enumerate(charts[:4]):
-                with c_cols[idx % 2]:
-                    st.markdown(f"#### {c_spec['title']}")
-                    p_type = c_spec["powerbi_type"]
-                    f_name = c_spec.get("mapped_field")
+                with chart_cols[idx % 2]:
+                    p_type = c_spec.get("powerbi_type", "barChart")
+                    field_hint = c_spec.get("mapped_field", "")
 
                     try:
-                        if p_type == "lineChart" and "Date" in raw_df.columns:
-                            num_col = "ConfirmedIndianNational" if "ConfirmedIndianNational" in raw_df.columns else raw_df.select_dtypes(include=['number']).columns[0]
-                            df_trend = raw_df.groupby("Date")[num_col].sum().reset_index()
-                            fig = px.line(df_trend, x="Date", y=num_col, title=c_spec["title"], template="plotly_white")
-                            fig.update_layout(height=260, margin=dict(l=20, r=20, t=30, b=20))
-                            st.plotly_chart(fig, use_container_width=True)
+                        if p_type == "lineChart":
+                            date_col = _find_date_col(raw_df)
+                            num_col = _find_numeric_col(raw_df, field_hint)
+                            if date_col and num_col:
+                                df_plot = raw_df.copy()
+                                df_plot[date_col] = pd.to_datetime(df_plot[date_col], errors="coerce")
+                                df_plot = df_plot.dropna(subset=[date_col])
+                                df_agg = df_plot.groupby(date_col)[num_col].sum().reset_index()
+                                fig = px.line(df_agg, x=date_col, y=num_col, title=c_spec["title"], template="plotly_white")
+                                fig.update_layout(height=280, margin=dict(l=30, r=20, t=40, b=30))
+                                fig.update_traces(line_color="#3B82F6")
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                _render_chart_placeholder(c_spec)
 
-                        elif p_type == "pieChart" and "State/UnionTerritory" in raw_df.columns:
-                            num_col = "ConfirmedIndianNational" if "ConfirmedIndianNational" in raw_df.columns else raw_df.select_dtypes(include=['number']).columns[0]
-                            df_pie = raw_df.groupby("State/UnionTerritory")[num_col].sum().nlargest(5).reset_index()
-                            fig = px.pie(df_pie, names="State/UnionTerritory", values=num_col, title=c_spec["title"], hole=0.4, template="plotly_white")
-                            fig.update_layout(height=260, margin=dict(l=20, r=20, t=30, b=20))
-                            st.plotly_chart(fig, use_container_width=True)
+                        elif p_type in ["pieChart", "donutChart"]:
+                            cat_col = _find_category_col(raw_df, field_hint)
+                            num_col = _find_numeric_col(raw_df, "")
+                            if cat_col and num_col:
+                                df_pie = raw_df.groupby(cat_col)[num_col].sum().nlargest(6).reset_index()
+                                hole = 0.45 if p_type == "donutChart" else 0.4
+                                fig = px.pie(df_pie, names=cat_col, values=num_col, title=c_spec["title"], hole=hole, template="plotly_white",
+                                             color_discrete_sequence=px.colors.qualitative.Set2)
+                                fig.update_layout(height=280, margin=dict(l=20, r=20, t=40, b=20))
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                _render_chart_placeholder(c_spec)
 
-                        elif p_type in ["barChart", "columnChart"] and "State/UnionTerritory" in raw_df.columns:
-                            num_col = "Cured" if "Cured" in raw_df.columns else raw_df.select_dtypes(include=['number']).columns[0]
-                            df_bar = raw_df.groupby("State/UnionTerritory")[num_col].sum().nlargest(7).reset_index()
-                            fig = px.bar(df_bar, x="State/UnionTerritory", y=num_col, title=c_spec["title"], template="plotly_white")
-                            fig.update_layout(height=260, margin=dict(l=20, r=20, t=30, b=20))
-                            st.plotly_chart(fig, use_container_width=True)
+                        elif p_type in ["barChart", "columnChart"]:
+                            cat_col = _find_category_col(raw_df, field_hint)
+                            num_col = _find_numeric_col(raw_df, "")
+                            if cat_col and num_col:
+                                df_bar = raw_df.groupby(cat_col)[num_col].sum().nlargest(8).reset_index()
+                                orientation = "h" if p_type == "barChart" else "v"
+                                if orientation == "h":
+                                    fig = px.bar(df_bar, y=cat_col, x=num_col, title=c_spec["title"], orientation="h", template="plotly_white",
+                                                 color_discrete_sequence=["#3B82F6"])
+                                else:
+                                    fig = px.bar(df_bar, x=cat_col, y=num_col, title=c_spec["title"], template="plotly_white",
+                                                 color_discrete_sequence=["#3B82F6"])
+                                fig.update_layout(height=280, margin=dict(l=30, r=20, t=40, b=30))
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                _render_chart_placeholder(c_spec)
 
                         else:
-                            st.info(f"📈 **{c_spec['title']}** (`{p_type}` bound to `{f_name}`)")
+                            _render_chart_placeholder(c_spec)
 
-                    except Exception:
-                        st.info(f"📈 **{c_spec['title']}** (`{p_type}` bound to `{f_name}`)")
+                    except Exception as e:
+                        _render_chart_placeholder(c_spec)
 
         elif charts:
-            c_cols = st.columns(2)
+            chart_cols = st.columns(2)
             for idx, c_spec in enumerate(charts[:4]):
-                with c_cols[idx % 2]:
-                    st.info(f"📈 **{c_spec['title']}**\n- Type: `{c_spec['powerbi_type']}`\n- Field: `{c_spec.get('mapped_field')}`\n- Position: (x={c_spec['layout']['x']}, y={c_spec['layout']['y']}, w={c_spec['layout']['width']}, h={c_spec['layout']['height']})")
+                with chart_cols[idx % 2]:
+                    _render_chart_placeholder(c_spec)
+
+        # ── Slicers / Filters ──
+        filters = [v for v in mapped_visuals if v["html_type"] in ["slicer", "date_slicer"]]
+        if filters:
+            st.markdown("<br>", unsafe_allow_html=True)
+            f_cols = st.columns(min(len(filters), 3))
+            for idx, flt in enumerate(filters[:3]):
+                with f_cols[idx % len(f_cols)]:
+                    field = flt.get("mapped_field", "Filter")
+                    st.markdown(f"""
+                        <div style="background: white; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-top: 3px solid #8B5CF6;">
+                            <div style="font-size: 0.7rem; color: #8B5CF6; text-transform: uppercase; letter-spacing: 1px;">🎛️ Slicer</div>
+                            <div style="font-weight: 600; color: #1E293B; margin-top: 4px;">{flt['title']}</div>
+                            <div style="font-size: 0.75rem; color: #94A3B8; margin-top: 2px;">Field: {field}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 2. Detailed Spatial Coordinate Wireframe Table
-    with st.expander("📍 View 2D Spatial Layout Coordinate Wireframe (1280x720 Canvas Specs)"):
+    # ── Collapsible Coordinate Wireframe Table ──
+    with st.expander("📍 View 2D Spatial Layout Coordinate Wireframe (1280×720 Canvas Specs)"):
         coords_data = []
         for v in mapped_visuals:
             coords_data.append({
@@ -122,3 +226,16 @@ def render_reconstruction_wireframe(
                 "Status": v["status"]
             })
         st.dataframe(pd.DataFrame(coords_data), use_container_width=True)
+
+def _render_chart_placeholder(c_spec: Dict[str, Any]):
+    """Renders a styled placeholder card for a chart when data isn't available."""
+    st.markdown(f"""
+        <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-top: 3px solid #F59E0B; min-height: 150px;">
+            <div style="font-weight: 700; color: #1E293B; margin-bottom: 8px;">📈 {c_spec['title']}</div>
+            <div style="font-size: 0.85rem; color: #64748B;">
+                <b>Type:</b> <code>{c_spec.get('powerbi_type', 'chart')}</code><br>
+                <b>Field:</b> <code>{c_spec.get('mapped_field', 'N/A')}</code><br>
+                <b>Position:</b> (x={c_spec['layout']['x']}, y={c_spec['layout']['y']}, w={c_spec['layout']['width']}, h={c_spec['layout']['height']})
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
