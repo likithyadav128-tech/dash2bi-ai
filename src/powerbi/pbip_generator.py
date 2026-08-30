@@ -32,8 +32,12 @@ def generate_classic_report_layout(
     dataset_cols: List[Dict[str, Any]],
     measures: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
-    """Generates standard Power BI Report Layout JSON containing all visual containers and page structure."""
+    """Generates standard Power BI Report Layout JSON with precise Measure vs Column bindings."""
     safe_table = table_name.replace(" ", "_")
+    col_names = {c["original_name"].strip().lower(): c["original_name"] for c in dataset_cols}
+    measure_names = {m["measure_name"].strip().lower(): m["measure_name"] for m in measures}
+    vis_measure_map = {m.get("visual_id"): m["measure_name"] for m in measures if m.get("visual_id")}
+
     visual_containers = []
     
     for idx, v in enumerate(mapped_visuals):
@@ -42,11 +46,22 @@ def generate_classic_report_layout(
         layout = v.get("layout", {"x": 20, "y": 20, "width": 300, "height": 110})
         title = v.get("title", "")
         mapped_field = v.get("mapped_field", "")
-        measure_name = v.get("measure_name", title)
-        
-        prop_name = measure_name if measure_name else (mapped_field or "Confirmed")
-        dim_prop = mapped_field or "State"
-        val_prop = measure_name or "TOTAL CONFIRMED"
+
+        # Determine exact binding property (Measure or Column)
+        if v_id in vis_measure_map:
+            val_prop = vis_measure_map[v_id]
+            is_measure = True
+        elif v.get("measure_name") and v["measure_name"].strip().lower() in measure_names:
+            val_prop = measure_names[v["measure_name"].strip().lower()]
+            is_measure = True
+        elif mapped_field and mapped_field.strip().lower() in col_names:
+            val_prop = col_names[mapped_field.strip().lower()]
+            is_measure = False
+        else:
+            val_prop = list(col_names.values())[0] if col_names else "Column1"
+            is_measure = False
+
+        dim_prop = col_names.get(mapped_field.strip().lower(), mapped_field) if mapped_field else (list(col_names.values())[0] if col_names else "Column1")
 
         if pbi_type == "card":
             single_visual = {
@@ -54,7 +69,7 @@ def generate_classic_report_layout(
                 "projections": {
                     "Values": [
                         {
-                            "queryRef": f"{safe_table}.{prop_name}"
+                            "queryRef": f"{safe_table}.{val_prop}"
                         }
                     ]
                 },
@@ -69,15 +84,15 @@ def generate_classic_report_layout(
                     ],
                     "Select": [
                         {
-                            "Measure": {
+                            ("Measure" if is_measure else "Column"): {
                                 "Expression": {
                                     "SourceRef": {
                                         "Source": "t"
                                     }
                                 },
-                                "Property": prop_name
+                                "Property": val_prop
                             },
-                            "Name": f"{safe_table}.{prop_name}"
+                            "Name": f"{safe_table}.{val_prop}"
                         }
                     ]
                 }
@@ -119,7 +134,7 @@ def generate_classic_report_layout(
                             "Name": f"{safe_table}.{dim_prop}"
                         },
                         {
-                            "Measure": {
+                            ("Measure" if is_measure else "Column"): {
                                 "Expression": {
                                     "SourceRef": {
                                         "Source": "t"
